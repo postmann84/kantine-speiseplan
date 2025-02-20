@@ -1,5 +1,4 @@
-import React from 'react';
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 
 export default function Home() {
   const [menuData, setMenuData] = useState(null);
@@ -40,14 +39,11 @@ export default function Home() {
   }
 
   return (
-    <div className="bg-red-500 p-4 m-4">
-      Test
-    </div>
     <div className="max-w-3xl mx-auto p-8 bg-white min-h-screen">
       {/* Header */}
       <div className="text-center mb-8">
         <div className="text-gray-600 text-sm mb-2">Tel. {menuData.contactInfo.phone}</div>
-        <div className="text-gray-600 text-sm mb-4">Postfremde-Kunden {menuData.contactInfo.postcode}</div>
+        <div className="text-gray-600 text-sm mb-4">Postleitzahl-Kunden {menuData.contactInfo.postcode}</div>
         <h1 className="text-3xl font-bold mb-2">Mittagskarte</h1>
         <p className="text-gray-600">
           {new Date(menuData.weekStart).toLocaleDateString('de-DE', {
@@ -85,22 +81,6 @@ export default function Home() {
       <div className="mt-12 pt-6 border-t text-center text-sm text-gray-500">
         <p>Alle Preise inkl. MwSt</p>
       </div>
-
-      {/* Print Styles */}
-      <style jsx global>{`
-        @media print {
-          body {
-            print-color-adjust: exact;
-            -webkit-print-color-adjust: exact;
-          }
-          .min-h-screen {
-            min-height: auto;
-          }
-          @page {
-            margin: 2cm;
-          }
-        }
-      `}</style>
     </div>
   );
 }
