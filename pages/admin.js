@@ -59,14 +59,14 @@ export default function Admin() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+      
     const menuData = {
       weekStart: dateRange.start,
       weekEnd: dateRange.end,
       days: weekMenu,
       contactInfo
     };
-
+  
     try {
       const response = await fetch('/api/menu', {
         method: 'POST',
@@ -75,12 +75,17 @@ export default function Admin() {
         },
         body: JSON.stringify(menuData),
       });
-
-      if (!response.ok) throw new Error('Fehler beim Speichern');
-      
+  
+      const data = await response.json();
+  
+      if (!response.ok) {
+        throw new Error(data.error || 'Unbekannter Fehler beim Speichern');
+      }
+        
       alert('Speiseplan erfolgreich gespeichert!');
     } catch (error) {
-      alert('Fehler: ' + error.message);
+      console.error('Fehler beim Speichern:', error);
+      alert('Fehler beim Speichern: ' + error.message);
     }
   };
 
