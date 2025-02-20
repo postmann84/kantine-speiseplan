@@ -5,7 +5,7 @@ import { Save } from 'lucide-react';
 export default function Admin() {
   const [contactInfo, setContactInfo] = useState({
     phone: '05101-84809',
-    postcode: '49.50'
+    postcode: '0.50'
   });
   
   const [dateRange, setDateRange] = useState({
@@ -88,10 +88,9 @@ export default function Admin() {
     <div className="max-w-4xl mx-auto p-6">
       <h1 className="text-2xl font-bold mb-6">Speiseplan Administration</h1>
       
-      <form onSubmit={handleSubmit}>
-        {/* Kontaktinformationen */}
-        <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-          <h2 className="text-xl font-semibold mb-3">Kontaktinformationen</h2>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h2 className="text-xl font-semibold mb-4">Kontaktinformationen</h2>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1">
@@ -118,9 +117,8 @@ export default function Admin() {
           </div>
         </div>
 
-        {/* Datumsbereich */}
-        <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-          <h2 className="text-xl font-semibold mb-3">Zeitraum</h2>
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h2 className="text-xl font-semibold mb-4">Zeitraum</h2>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1">
@@ -147,10 +145,9 @@ export default function Admin() {
           </div>
         </div>
 
-        {/* Speiseplan */}
         {weekMenu.map((day, dayIndex) => (
-          <div key={day.day} className="mb-6 p-4 bg-gray-50 rounded-lg">
-            <h2 className="text-xl font-semibold mb-3">{day.day}</h2>
+          <div key={day.day} className="bg-white p-6 rounded-lg shadow">
+            <h2 className="text-xl font-semibold mb-4">{day.day}</h2>
             <div className="space-y-4">
               {day.meals.map((meal, mealIndex) => (
                 <div key={mealIndex} className="grid grid-cols-4 gap-4">
@@ -166,9 +163,9 @@ export default function Admin() {
                   <div>
                     <input
                       type="text"
-                      value={meal.price.toFixed(2)}
+                      value={meal.price.toFixed(2) + ' €'}
                       readOnly
-                      className="w-full p-2 bg-gray-100 border rounded"
+                      className="w-full p-2 bg-gray-100 border rounded text-right"
                     />
                   </div>
                 </div>
@@ -179,7 +176,7 @@ export default function Admin() {
         
         <button
           type="submit"
-          className="flex items-center justify-center w-full p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          className="w-full p-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center justify-center"
         >
           <Save className="w-5 h-5 mr-2" />
           Speiseplan speichern
