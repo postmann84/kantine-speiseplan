@@ -4,25 +4,18 @@ module.exports = {
     './pages/**/*.{js,ts,jsx,tsx}',
     './components/**/*.{js,ts,jsx,tsx}',
   ],
+  safelist: [
+    'bg-blue-600',
+    'text-white',
+    'shadow-lg',
+    'rounded-lg',
+    'divide-y',
+    'divide-gray-200',
+    'hover:bg-gray-50',
+    'transition-colors'
+  ],
   theme: {
     extend: {},
   },
   plugins: [],
-  safelist: [
-    // Fügen Sie hier häufig verwendete Klassen hinzu
-    {
-      pattern: /(bg|text|border)-(gray|blue|red|green)-[1-9]00/,
-    },
-    {
-      pattern: /(m|p|mt|mb|ml|mr|px|py)-[1-9]/,
-    },
-    'flex',
-    'items-center',
-    'justify-center',
-    'min-h-screen',
-    'space-y-8',
-    'italic',
-    'font-bold',
-    'text-center',
-  ]
 }
