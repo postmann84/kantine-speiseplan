@@ -30,7 +30,7 @@ export default function Home() {
     <div className="max-w-2xl mx-auto p-6">
       <div className="text-center mb-6">
         <p className="text-gray-600">Tel. {menuData.contactInfo.phone}</p>
-        <p className="text-gray-600">Postleitzahl-Kunden {menuData.contactInfo.postcode}</p>
+        <p className="text-gray-600">Postfremde-Kunden {menuData.contactInfo.postcode}</p>
       </div>
       
       <h1 className="text-2xl font-bold text-center mb-2">Mittagskarte</h1>
