@@ -37,7 +37,41 @@ export default function Home() {
       </div>
     );
   }
+  return (
+  <div className="menu-container">
+    <div className="menu-header">
+      <div className="menu-contact">
+        {menuData.contactInfo && `Tel. ${menuData.contactInfo.phone}`}
+      </div>
+      <div className="menu-contact">
+        {menuData.contactInfo && `Postleitzahl-Kunden ${menuData.contactInfo.postcode}`}
+      </div>
+      <h1 className="menu-title">Mittagskarte</h1>
+      <p className="menu-date">
+        {menuData.weekStart && new Date(menuData.weekStart).toLocaleDateString('de-DE')} - 
+        {menuData.weekEnd && new Date(menuData.weekEnd).toLocaleDateString('de-DE')}
+      </p>
+    </div>
 
+    <div className="space-y-8">
+      {menuData.days && menuData.days.map((day, dayIndex) => (
+        <div key={dayIndex} className="menu-day">
+          <h2 className="menu-day-title">{day.day}</h2>
+          <div className="space-y-4">
+            {day.meals && day.meals.map((meal, mealIndex) => (
+              <div key={mealIndex} className="menu-item">
+                <p className="menu-item-name">{meal.name}</p>
+                <p className="menu-item-price">
+                  Euro {meal.price?.toFixed(2)}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+);
   return (
     <div className="max-w-3xl mx-auto p-8 bg-white min-h-screen">
       {/* Header */}
