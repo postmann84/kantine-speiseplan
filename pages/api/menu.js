@@ -5,7 +5,7 @@ import Menu from '../../models/menu';
 export default async function handler(req, res) {
   try {
     await dbConnect();
-    console.log('MongoDB connected successfully');
+    console.log('MongoDB verbunden');
 
     if (req.method === 'POST') {
       try {
@@ -24,22 +24,38 @@ export default async function handler(req, res) {
     } else if (req.method === 'GET') {
       try {
         const menu = await Menu.findOne().sort({ createdAt: -1 });
-        res.status(200).json({ success: true, data: menu });
+        console.log('GET Request - Gefundenes Menü:', menu); // Debug Log
+        
+        if (!menu) {
+          return res.status(404).json({ 
+            success: false, 
+            error: 'Kein Menü gefunden' 
+          });
+        }
+
+        return res.status(200).json({ 
+          success: true, 
+          data: {
+            weekStart: menu.weekStart,
+            weekEnd: menu.weekEnd,
+            days: menu.days,
+            contactInfo: menu.contactInfo
+          }
+        });
+
       } catch (error) {
-        console.error('Error fetching menu:', error);
-        res.status(400).json({ 
+        console.error('GET Request - Fehler:', error);
+        return res.status(400).json({ 
           success: false, 
-          error: error.message,
-          details: error.toString()
+          error: error.message 
         });
       }
     }
   } catch (error) {
-    console.error('Connection error:', error);
-    res.status(500).json({ 
+    console.error('Verbindungsfehler:', error);
+    return res.status(500).json({ 
       success: false, 
-      error: 'Database connection failed',
-      details: error.toString()
+      error: 'Datenbankverbindung fehlgeschlagen' 
     });
   }
 }
