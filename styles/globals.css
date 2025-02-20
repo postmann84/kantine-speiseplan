@@ -1,3 +1,21 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer components {
+  .menu-card {
+    @apply bg-white rounded-lg shadow-md p-6 mb-4;
+  }
+  
+  .menu-day {
+    @apply text-xl font-semibold text-gray-800 mb-4;
+  }
+  
+  .menu-item {
+    @apply flex justify-between items-center py-2;
+  }
+  
+  .menu-price {
+    @apply text-gray-600 font-medium;
+  }
+}
