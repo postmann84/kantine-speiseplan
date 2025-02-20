@@ -50,6 +50,24 @@ export default function Home() {
 
   return (
     <div className="space-y-6">
+      {/* Kontaktinfo und Hinweis Card */}
+      {menuData?.contactInfo && (
+        <div className="menu-card">
+          <div className="flex justify-between items-start mb-4">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-800 mb-2">Kontakt</h2>
+              <p className="text-gray-600">Telefon: {menuData.contactInfo.phone}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-sm text-gray-600 italic">
+                Für Postfremde erhöht sich der Preis um {menuData.contactInfo.postcode}€
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Speiseplan Cards */}
       {menuData?.days.map((day, index) => (
         <div key={index} className="menu-card">
           <h2 className="menu-day">{day.day}</h2>
