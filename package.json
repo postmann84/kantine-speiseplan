@@ -13,7 +13,6 @@
     "react-dom": "^18.2.0",
     "mongodb": "^6.3.0",
     "mongoose": "^8.1.0",
-    "@/components/ui/card": "^1.0.0",
     "lucide-react": "^0.263.1"
   }
 }
