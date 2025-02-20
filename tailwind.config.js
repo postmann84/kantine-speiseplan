@@ -1,21 +1,13 @@
-/** @type {import('tailwindcss').Config} */
+// tailwind.config.js
 module.exports = {
   content: [
-    './pages/**/*.{js,ts,jsx,tsx}',
-    './components/**/*.{js,ts,jsx,tsx}',
-  ],
-  safelist: [
-    'bg-blue-600',
-    'text-white',
-    'shadow-lg',
-    'rounded-lg',
-    'divide-y',
-    'divide-gray-200',
-    'hover:bg-gray-50',
-    'transition-colors'
+    "./pages/**/*.{js,ts,jsx,tsx}",
+    "./components/**/*.{js,ts,jsx,tsx}",
+    // wenn du einen Ordner "lib" hast, ggf. auch:
+    "./lib/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
     extend: {},
   },
   plugins: [],
-}
+};
