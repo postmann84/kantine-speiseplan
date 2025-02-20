@@ -40,6 +40,9 @@ export default function Home() {
   }
 
   return (
+    <div className="bg-red-500 p-4 m-4">
+      Test
+    </div>
     <div className="max-w-3xl mx-auto p-8 bg-white min-h-screen">
       {/* Header */}
       <div className="text-center mb-8">
