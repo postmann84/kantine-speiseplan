@@ -26,5 +26,5 @@ const MenuSchema = new mongoose.Schema({
     default: Date.now
   }
 });
-
+ 
 export default mongoose.models.Menu || mongoose.model('Menu', MenuSchema);
