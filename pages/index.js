@@ -50,6 +50,16 @@ export default function Home() {
 
   return (
     <div className="space-y-6">
+      {/* Zeitraum Card */}
+      {menuData?.weekStart && menuData?.weekEnd && (
+        <div className="menu-card bg-blue-50">
+          <h2 className="text-lg font-semibold text-blue-900 mb-2">Speiseplan gültig vom</h2>
+          <p className="text-blue-800">
+            {formatDate(menuData.weekStart)} bis {formatDate(menuData.weekEnd)}
+          </p>
+        </div>
+      )}
+
       {/* Kontaktinfo und Hinweis Card */}
       {menuData?.contactInfo && (
         <div className="menu-card">
