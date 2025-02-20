@@ -6,12 +6,18 @@ export default function Home() {
 
   // Datumsformatierung-Funktion
   const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('de-DE', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
+    if (!dateString) return '';
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('de-DE', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
+    } catch (error) {
+      console.error('Fehler bei der Datumsformatierung:', error);
+      return '';
+    }
   };
 
   useEffect(() => {
@@ -78,7 +84,7 @@ export default function Home() {
       )}
 
       {/* Speiseplan Cards */}
-      {menuData?.days.map((day, index) => (
+      {menuData?.days?.map((day, index) => (
         <div key={index} className="menu-card">
           <h2 className="menu-day">{day.day}</h2>
           <div className="space-y-2">
