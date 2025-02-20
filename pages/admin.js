@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Save, Loader, AlertCircle } from 'lucide-react';
 
 export default function Admin() {
@@ -7,8 +7,8 @@ export default function Admin() {
   const [success, setSuccess] = useState(false);
   
   const [contactInfo, setContactInfo] = useState({
-    phone: '05101-84809',
-    postcode: '49.50'
+    phone: '',
+    postcode: ''
   });
   
   const [dateRange, setDateRange] = useState({
@@ -16,43 +16,30 @@ export default function Admin() {
     end: ''
   });
 
-  const [weekMenu, setWeekMenu] = useState([
-    { 
-      day: 'Montag', 
-      meals: [
-        { name: '', price: 4.80 },
-        { name: '', price: 6.80 }
-      ]
-    },
-    { 
-      day: 'Dienstag', 
-      meals: [
-        { name: '', price: 4.80 },
-        { name: '', price: 6.80 }
-      ]
-    },
-    { 
-      day: 'Mittwoch', 
-      meals: [
-        { name: '', price: 4.80 },
-        { name: '', price: 6.80 }
-      ]
-    },
-    { 
-      day: 'Donnerstag', 
-      meals: [
-        { name: '', price: 4.80 },
-        { name: '', price: 6.80 }
-      ]
-    },
-    { 
-      day: 'Freitag', 
-      meals: [
-        { name: '', price: 4.80 },
-        { name: '', price: 6.80 }
-      ]
+  const [weekMenu, setWeekMenu] = useState([]);
+
+  useEffect(() => {
+    async function fetchCurrentMenu() {
+      try {
+        const response = await fetch('/api/menu');
+        const data = await response.json();
+        
+        if (data.success && data.data) {
+          setDateRange({
+            start: data.data.weekStart.split('T')[0],
+            end: data.data.weekEnd.split('T')[0]
+          });
+          setWeekMenu(data.data.days || []);
+          setContactInfo(data.data.contactInfo || { phone: '', postcode: '' });
+        }
+      } catch (error) {
+        console.error('Fehler beim Laden des aktuellen Speiseplans:', error);
+        setError('Fehler beim Laden des aktuellen Speiseplans');
+      }
     }
-  ]);
+
+    fetchCurrentMenu();
+  }, []);
 
   const handleMealChange = (dayIndex, mealIndex, value) => {
     const newMenu = [...weekMenu];
