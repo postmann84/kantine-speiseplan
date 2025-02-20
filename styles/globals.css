@@ -1,13 +1,45 @@
+/* Tailwind Directives */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --foreground-rgb: 0, 0, 0;
-  --background-rgb: 255, 255, 255;
+/* Custom Base Styles */
+@layer base {
+  body {
+    @apply bg-gray-50;
+  }
 }
 
-body {
-  color: rgb(var(--foreground-rgb));
-  background: rgb(var(--background-rgb));
-} 
+/* Custom Component Styles */
+@layer components {
+  .menu-container {
+    @apply max-w-3xl mx-auto p-8 bg-white min-h-screen;
+  }
+  .menu-header {
+    @apply text-center mb-8;
+  }
+  .menu-contact {
+    @apply text-gray-600 text-sm mb-2;
+  }
+  .menu-title {
+    @apply text-3xl font-bold mb-2;
+  }
+  .menu-date {
+    @apply text-gray-600;
+  }
+  .menu-day {
+    @apply border-b pb-6 last:border-b-0;
+  }
+  .menu-day-title {
+    @apply text-xl font-semibold mb-4;
+  }
+  .menu-item {
+    @apply space-y-1;
+  }
+  .menu-item-name {
+    @apply italic text-lg mb-1;
+  }
+  .menu-item-price {
+    @apply pl-4 text-right text-gray-700;
+  }
+}
