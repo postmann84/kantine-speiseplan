@@ -8,7 +8,11 @@ export default function Home() {
   const formatDate = (dateString) => {
     if (!dateString) return '';
     const date = new Date(dateString);
-    return date.toLocaleDateString('de-DE');
+    return date.toLocaleDateString('de-DE', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
   };
 
   useEffect(() => {
@@ -16,6 +20,7 @@ export default function Home() {
       try {
         const response = await fetch('/api/menu');
         const data = await response.json();
+        console.log('Geladene Daten:', data); // Debug-Ausgabe
         if (data.success) {
           setMenuData(data.data);
         }
@@ -37,12 +42,19 @@ export default function Home() {
     return <div>Kein Speiseplan verfügbar</div>;
   }
 
+  console.log('MenuData:', menuData); // Debug-Ausgabe
+
   return (
     <div>
-      <div className="mb-4">
-        <p>Speiseplan vom {formatDate(menuData.weekStart)} bis {formatDate(menuData.weekEnd)}</p>
+      {/* Zeitraum des Speiseplans */}
+      <div className="bg-blue-50 p-4 rounded-lg mb-6">
+        <h2 className="text-xl font-bold mb-2">Aktueller Speiseplan</h2>
+        <p className="text-gray-700">
+          Gültig vom {formatDate(menuData.weekStart)} bis {formatDate(menuData.weekEnd)}
+        </p>
       </div>
 
+      {/* Speiseplan */}
       {menuData.days?.map((day, index) => (
         <div key={index} className="menu-card">
           <h2 className="menu-day">{day.day}</h2>
