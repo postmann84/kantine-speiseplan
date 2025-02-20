@@ -13,9 +13,14 @@
     "react-dom": "18.2.0",
     "mongoose": "8.1.0",
     "mongodb": "6.3.0",
-    "lucide-react": "0.263.1",
+    "lucide-react": "0.263.1"
+  },
+  "devDependencies": {
     "tailwindcss": "^3.4.1",
     "autoprefixer": "^10.4.17",
-    "postcss": "^8.4.35"
+    "postcss": "^8.4.35",
+    "style-loader": "^3.3.4",
+    "css-loader": "^6.10.0",
+    "postcss-loader": "^8.1.0"
   }
 }
