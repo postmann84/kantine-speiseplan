@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getHolidaysForWeek } from '../lib/holidays';
 import { formatDate, isSameDay, formatFullDate } from '../lib/dateUtils';
+import { QRCodeSVG } from 'qrcode.react';
 
 export default function Home() {
   const [menuData, setMenuData] = useState(null);
@@ -208,8 +209,22 @@ export default function Home() {
         })}
       </main>
 
-      <footer className="mt-8 text-center text-gray-500 text-sm space-y-2 border-t pt-4">
+      <footer className="mt-8 text-center text-gray-500 text-sm space-y-4 border-t pt-4">
         <p>Bei Fragen zu Inhaltsstoffen und Allergenen kontaktieren Sie uns bitte unter: {menuData.contactInfo.phone}</p>
+        
+        {/* QR Code Sektion */}
+        <div className="flex flex-col items-center mt-4">
+          <p className="mb-2">Speiseplan direkt auf dem Smartphone:</p>
+          <div className="p-2 bg-white rounded-lg shadow-sm">
+            <QRCodeSVG 
+              value={typeof window !== 'undefined' ? window.location.href : ''}
+              size={100}
+              level="L"
+              includeMargin={true}
+            />
+          </div>
+        </div>
+        
         <p>© {new Date().getFullYear()}</p>
       </footer>
     </div>
