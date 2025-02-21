@@ -1,6 +1,44 @@
 // models/menu.js
 import mongoose from 'mongoose';
 
+// Löschen Sie zuerst alle existierenden Models
+mongoose.models = {};
+
+const MealSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    default: ''
+  },
+  price: {
+    type: Number,
+    required: true
+  },
+  isAction: {
+    type: Boolean,
+    default: false
+  },
+  actionNote: {
+    type: String,
+    default: ''
+  }
+});
+
+const DaySchema = new mongoose.Schema({
+  day: {
+    type: String,
+    required: true
+  },
+  meals: [MealSchema],
+  isClosed: {
+    type: Boolean,
+    default: false
+  },
+  closedReason: {
+    type: String,
+    default: ''
+  }
+});
+
 const MenuSchema = new mongoose.Schema({
   weekStart: {
     type: Date,
@@ -10,21 +48,25 @@ const MenuSchema = new mongoose.Schema({
     type: Date,
     required: true
   },
-  days: [{
-    day: String,
-    meals: [{
-      name: String,
-      price: Number
-    }]
-  }],
+  days: [DaySchema],
   contactInfo: {
     phone: String,
     postcode: String
   },
-  createdAt: {
-    type: Date,
-    default: Date.now
+  vacation: {
+    isOnVacation: {
+      type: Boolean,
+      default: false
+    },
+    startDate: Date,
+    endDate: Date,
+    message: {
+      type: String,
+      default: 'Wir befinden uns im Urlaub.'
+    }
   }
+}, {
+  timestamps: true
 });
- 
-export default mongoose.models.Menu || mongoose.model('Menu', MenuSchema);
+
+export default mongoose.model('Menu', MenuSchema);
