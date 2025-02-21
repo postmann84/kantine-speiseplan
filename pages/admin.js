@@ -6,88 +6,73 @@ export default function Admin() {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
   
-  const [contactInfo, setContactInfo] = useState({
-    phone: '',
-    postcode: ''
+  const [dateRange, setDateRange] = useState({
+    start: new Date().toISOString().split('T')[0],
+    end: new Date().toISOString().split('T')[0]
   });
   
-  const [dateRange, setDateRange] = useState({
-    start: '',
-    end: ''
+  const [weekMenu, setWeekMenu] = useState([
+    { day: 'Montag', meals: [{ name: '', price: 0 }] },
+    { day: 'Dienstag', meals: [{ name: '', price: 0 }] },
+    { day: 'Mittwoch', meals: [{ name: '', price: 0 }] },
+    { day: 'Donnerstag', meals: [{ name: '', price: 0 }] },
+    { day: 'Freitag', meals: [{ name: '', price: 0 }] }
+  ]);
+  
+  const [contactInfo, setContactInfo] = useState({
+    phone: '05101-84809',
+    postcode: '0.50'
   });
 
-  const [weekMenu, setWeekMenu] = useState([]);
+  // Funktion zum Hinzufügen einer Mahlzeit
+  const addMeal = (dayIndex) => {
+    const newWeekMenu = [...weekMenu];
+    newWeekMenu[dayIndex].meals.push({ name: '', price: 0 });
+    setWeekMenu(newWeekMenu);
+  };
 
-  useEffect(() => {
-    async function fetchCurrentMenu() {
-      try {
-        const response = await fetch('/api/menu');
-        const data = await response.json();
-        
-        if (data.success && data.data) {
-          setDateRange({
-            start: data.data.weekStart.split('T')[0],
-            end: data.data.weekEnd.split('T')[0]
-          });
-          setWeekMenu(data.data.days || []);
-          setContactInfo(data.data.contactInfo || { phone: '', postcode: '' });
-        }
-      } catch (error) {
-        console.error('Fehler beim Laden des aktuellen Speiseplans:', error);
-        setError('Fehler beim Laden des aktuellen Speiseplans');
-      }
-    }
+  // Funktion zum Aktualisieren einer Mahlzeit
+  const updateMeal = (dayIndex, mealIndex, field, value) => {
+    const newWeekMenu = [...weekMenu];
+    newWeekMenu[dayIndex].meals[mealIndex][field] = field === 'price' ? parseFloat(value) : value;
+    setWeekMenu(newWeekMenu);
+  };
 
-    fetchCurrentMenu();
-  }, []);
-
-  const handleMealChange = (dayIndex, mealIndex, value) => {
-    const newMenu = [...weekMenu];
-    newMenu[dayIndex].meals[mealIndex].name = value;
-    setWeekMenu(newMenu);
+  // Funktion zum Entfernen einer Mahlzeit
+  const removeMeal = (dayIndex, mealIndex) => {
+    const newWeekMenu = [...weekMenu];
+    newWeekMenu[dayIndex].meals.splice(mealIndex, 1);
+    setWeekMenu(newWeekMenu);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    setSuccess(false);
     
-    const menuData = {
-      weekStart: dateRange.start,
-      weekEnd: dateRange.end,
-      days: weekMenu,
-      contactInfo
-    };
-
     try {
       const response = await fetch('/api/menu', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(menuData),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          weekStart: dateRange.start,
+          weekEnd: dateRange.end,
+          days: weekMenu,
+          contactInfo
+        })
       });
 
       const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Fehler beim Speichern');
-      }
+      
+      if (!response.ok) throw new Error(data.error || 'Fehler beim Speichern');
       
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (error) {
-      console.error('Fehler:', error);
       setError(error.message);
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleContactInfoChange = (e) => {
-    const { name, value } = e.target;
-    setContactInfo({ ...contactInfo, [name]: value });
   };
 
   return (
@@ -126,7 +111,7 @@ export default function Admin() {
                   name="phone"
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                   value={contactInfo.phone}
-                  onChange={handleContactInfoChange}
+                  onChange={(e) => setContactInfo(prev => ({ ...prev, phone: e.target.value }))}
                 />
               </div>
               <div>
@@ -138,7 +123,7 @@ export default function Admin() {
                   name="postcode"
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                   value={contactInfo.postcode}
-                  onChange={handleContactInfoChange}
+                  onChange={(e) => setContactInfo(prev => ({ ...prev, postcode: e.target.value }))}
                 />
               </div>
             </div>
@@ -155,7 +140,7 @@ export default function Admin() {
                 <input
                   type="date"
                   value={dateRange.start}
-                  onChange={(e) => setDateRange({...dateRange, start: e.target.value})}
+                  onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
                   className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
@@ -166,7 +151,7 @@ export default function Admin() {
                 <input
                   type="date"
                   value={dateRange.end}
-                  onChange={(e) => setDateRange({...dateRange, end: e.target.value})}
+                  onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
                   className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
@@ -179,26 +164,44 @@ export default function Admin() {
               <h2 className="text-xl font-semibold mb-4 text-gray-900">{day.day}</h2>
               <div className="space-y-4">
                 {day.meals.map((meal, mealIndex) => (
-                  <div key={mealIndex} className="grid grid-cols-4 gap-4">
+                  <div key={mealIndex} className="grid grid-cols-5 gap-4 mb-4">
                     <div className="col-span-3">
                       <input
                         type="text"
+                        placeholder="Gericht"
                         value={meal.name}
-                        onChange={(e) => handleMealChange(dayIndex, mealIndex, e.target.value)}
-                        className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder={`${mealIndex === 0 ? 'Erstes' : 'Zweites'} Gericht eingeben...`}
+                        onChange={(e) => updateMeal(dayIndex, mealIndex, 'name', e.target.value)}
+                        className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                       />
                     </div>
                     <div>
                       <input
-                        type="text"
-                        value={meal.price.toFixed(2) + ' €'}
-                        readOnly
-                        className="w-full p-2 bg-gray-50 border rounded-md text-right"
+                        type="number"
+                        step="0.01"
+                        placeholder="Preis"
+                        value={meal.price}
+                        onChange={(e) => updateMeal(dayIndex, mealIndex, 'price', e.target.value)}
+                        className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                       />
+                    </div>
+                    <div>
+                      <button
+                        type="button"
+                        onClick={() => removeMeal(dayIndex, mealIndex)}
+                        className="text-red-600 hover:text-red-800"
+                      >
+                        Entfernen
+                      </button>
                     </div>
                   </div>
                 ))}
+                <button
+                  type="button"
+                  onClick={() => addMeal(dayIndex)}
+                  className="mt-2 text-blue-600 hover:text-blue-800"
+                >
+                  + Gericht hinzufügen
+                </button>
               </div>
             </div>
           ))}
