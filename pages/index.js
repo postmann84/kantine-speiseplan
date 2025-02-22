@@ -272,21 +272,27 @@ export default function Home() {
       <header className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Betriebskantine</h1>
         <div className="mt-4 p-4 bg-white rounded-lg shadow-sm border border-gray-100">
-          <h2 className="text-lg font-semibold text-gray-800 mb-2">Öffnungszeiten</h2>
-          <div className="flex justify-center space-x-8">
-            <div className="text-center">
-              <span className="text-gray-600 font-medium">Frühstück</span>
-              <p className="text-gray-800">07:00 - 10:00 Uhr</p>
+          <div className="grid grid-cols-2 gap-4">
+            {/* Linke Spalte: Öffnungszeiten */}
+            <div>
+              <h2 className="text-lg font-semibold text-gray-800 mb-2">Öffnungszeiten</h2>
+              <div className="flex space-x-8">
+                <div>
+                  <span className="text-gray-600 font-medium">Frühstück</span>
+                  <p className="text-gray-800">07:00 - 10:00 Uhr</p>
+                </div>
+                <div>
+                  <span className="text-gray-600 font-medium">Mittagstisch</span>
+                  <p className="text-gray-800">11:30 - 14:00 Uhr</p>
+                </div>
+              </div>
             </div>
-            <div className="w-px bg-gray-200"></div>
-            <div className="text-center">
-              <span className="text-gray-600 font-medium">Mittagstisch</span>
-              <p className="text-gray-800">11:30 - 14:00 Uhr</p>
+            
+            {/* Rechte Spalte: Kontaktinfo */}
+            <div className="text-right">
+              <p className="text-gray-600">Telefon: {menu.contactInfo?.phone}</p>
+              <p className="text-gray-600 mt-2">Für Postfremde erhöht sich der Preis um {menu.contactInfo?.postcode} €</p>
             </div>
-          </div>
-          <div className="mt-4 pt-3 border-t border-gray-100 text-sm text-gray-600">
-            <p>Telefon: {menu.contactInfo?.phone}</p>
-            <p>Für Postfremde erhöht sich der Preis um {menu.contactInfo?.postcode} €</p>
           </div>
         </div>
       </header>
