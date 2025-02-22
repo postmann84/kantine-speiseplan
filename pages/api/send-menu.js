@@ -79,14 +79,14 @@ export default async function handler(req, res) {
     const mailOptions = {
       from: {
         name: 'Betriebskantine',
-        address: 'Postmann65@web.de'
+        address: process.env.EMAIL_USER
       },
       to: recipient,
       subject: `Speiseplan ${dateRange}`,
       html: emailHtml,
       attachments: [{
         filename: 'qrcode.png',
-        path: `${websiteUrl}/api/qr-code?url=${encodeURIComponent(websiteUrl)}`,
+        path: `${process.env.NEXT_PUBLIC_WEBSITE_URL}/api/qr-code?url=${encodeURIComponent(process.env.NEXT_PUBLIC_WEBSITE_URL)}`,
         cid: 'qrcode'
       }]
     };
