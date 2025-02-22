@@ -73,11 +73,11 @@ export default async function handler(req, res) {
     const emailHtml = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2 style="color: #1a365d;">Neuer Speiseplan verfügbar</h2>
-        <p>Der Speiseplan für die Woche vom ${weekStart} bis ${weekEnd} ist jetzt online verfügbar.</p>
+        <p>Der Speiseplan für die Woche vom ${dateRange} ist jetzt online verfügbar.</p>
         <p>Sie können den Speiseplan direkt über diesen Link aufrufen:</p>
         <p><a href="${websiteUrl}" style="background-color: #fbbf24; color: #1a365d; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px 0;">Zum Speiseplan</a></p>
         <p>Oder scannen Sie den QR-Code:</p>
-        <img src="cid:qrcode" alt="QR Code" style="width: 150px; height: 150px;" />
+        <img src="cid:qrcode" alt="QR Code" style="width: 150px; height: 150px; display: block; margin: 10px 0;" />
         <p style="color: #666; font-size: 0.9em; margin-top: 20px;">Wir freuen uns auf Ihren Besuch.</p>
       </div>
     `;
@@ -94,7 +94,8 @@ export default async function handler(req, res) {
         filename: 'qrcode.png',
         content: qrCodeBase64,
         encoding: 'base64',
-        cid: 'qrcode'
+        cid: 'qrcode',
+        contentType: 'image/png'
       }]
     };
 
