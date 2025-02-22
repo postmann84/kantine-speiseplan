@@ -19,28 +19,27 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Detailliertere SMTP-Konfiguration
-    const transporter = nodemailer.createTransport({
-      host: 'smtp.web.de',
-      port: 465,           // SSL Port
-      secure: true,        // SSL
-      auth: {
-        user: 'Postmann65@web.de',
-        pass: process.env.EMAIL_PASSWORD
-      },
-      debug: true,
-      logger: true
+    console.log('Starting email send process...');
+    console.log('SMTP Config:', {
+        host: process.env.SMTP_HOST,
+        port: process.env.SMTP_PORT,
+        user: process.env.SMTP_USER ? '✓ Present' : '✗ Missing',
+        pass: process.env.SMTP_PASS ? '✓ Present' : '✗ Missing'
     });
 
-    // Verbindungstest
-    console.log('Teste SMTP-Verbindung...');
-    try {
-      await transporter.verify();
-      console.log('SMTP-Verbindung erfolgreich!');
-    } catch (verifyError) {
-      console.error('SMTP-Verbindungstest fehlgeschlagen:', verifyError);
-      throw verifyError;
-    }
+    const transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port: process.env.SMTP_PORT,
+        secure: true, // für Port 465
+        auth: {
+            user: process.env.SMTP_USER,
+            pass: process.env.SMTP_PASS,
+        },
+    });
+
+    // Teste die SMTP-Verbindung
+    await transporter.verify();
+    console.log('SMTP connection verified successfully');
 
     const { weekStart, weekEnd } = req.body;
     const websiteUrl = process.env.NEXT_PUBLIC_WEBSITE_URL;
@@ -102,11 +101,21 @@ export default async function handler(req, res) {
       messageId: info.messageId
     });
   } catch (error) {
-    console.error('E-Mail-Versand fehlgeschlagen:', error);
-    res.status(500).json({ 
-      error: 'E-Mail-Versand fehlgeschlagen', 
-      details: error.message,
-      stack: error.stack
+    console.error('Detailed error information:');
+    console.error('Error name:', error.name);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
+    console.error('Error code:', error.code);
+    console.error('Error command:', error.command);
+    
+    return res.status(500).json({ 
+        message: 'Fehler beim E-Mail-Versand',
+        error: error.message,
+        errorDetails: {
+            name: error.name,
+            code: error.code,
+            command: error.command
+        }
     });
   }
 } 
