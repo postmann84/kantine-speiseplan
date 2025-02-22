@@ -19,3 +19,91 @@
     @apply text-gray-600 font-medium;
   }
 }
+
+/* Druckspezifische Styles */
+@media print {
+  @page {
+    size: A4;
+    margin: 0.5cm;
+  }
+
+  /* Grundlegende Print-Einstellungen */
+  html, body {
+    width: 210mm;
+    height: 297mm;
+    margin: 0;
+    padding: 0;
+  }
+
+  .print-container {
+    transform-origin: top left;
+    transform: scale(0.75);
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    height: 100vh !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  main {
+    flex: 1 !important;
+    overflow: visible !important;
+    page-break-after: avoid !important;
+    page-break-before: avoid !important;
+  }
+
+  /* Header Optimierung */
+  h1 {
+    font-size: 16pt !important;
+    margin-bottom: 0.2cm !important;
+  }
+
+  /* Menü-Karten Layout */
+  .menu-card {
+    margin-bottom: 0.15cm !important;
+    padding: 0.2cm !important;
+    border: 1px solid #ddd !important;
+    page-break-inside: avoid !important;
+  }
+
+  .menu-card h2 {
+    font-size: 11pt !important;
+    margin-bottom: 0.1cm !important;
+  }
+
+  .menu-card p, .menu-card span {
+    font-size: 10pt !important;
+    margin: 0.05cm 0 !important;
+    line-height: 1.1 !important;
+  }
+
+  /* Footer */
+  footer {
+    margin-top: 0.2cm !important;
+    padding-top: 0.2cm !important;
+    page-break-before: avoid !important;
+  }
+
+  footer p {
+    font-size: 8pt !important;
+    margin: 0 !important;
+  }
+
+  /* QR Code und Smartphone-Hinweis ausblenden */
+  .print-qr, 
+  footer p:contains("Speiseplan direkt auf dem Smartphone") {
+    display: none !important;
+  }
+
+  /* Abstände */
+  .space-y-6 > * + * {
+    margin-top: 0.1cm !important;
+  }
+
+  /* Strikte Seitenumbruch-Kontrolle */
+  * {
+    page-break-inside: avoid !important;
+  }
+}

@@ -1,0 +1,67 @@
+/* Druckspezifische Styles */
+@media print {
+  /* Seiteneinstellungen */
+  @page {
+    size: A4;
+    margin: 1cm;
+  }
+
+  /* Drucken-Button ausblenden */
+  .no-print {
+    display: none !important;
+  }
+
+  /* Container für den Druckbereich */
+  .print-container {
+    width: 210mm !important;
+    padding: 0 !important;
+    margin: 0 auto !important;
+  }
+
+  /* Tag-Container */
+  .day-container {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+    margin-bottom: 15mm !important;
+    padding: 5mm !important;
+  }
+
+  /* Mahlzeiten */
+  .meal-container {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Header auf jeder Seite */
+  header {
+    position: running(header);
+    margin-bottom: 10mm !important;
+  }
+
+  /* Footer auf jeder Seite */
+  footer {
+    position: running(footer);
+    padding-top: 5mm !important;
+    border-top: 1px solid #ddd !important;
+  }
+
+  /* QR Code optimieren */
+  .qr-code-container {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+    margin-top: 10mm !important;
+  }
+
+  /* Allgemeine Druckoptimierungen */
+  body {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Aktionsgerichte hervorheben */
+  .action-meal {
+    background-color: #fff3cd !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+} 

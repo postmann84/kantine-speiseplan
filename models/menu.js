@@ -13,6 +13,10 @@ const MealSchema = new mongoose.Schema({
     type: Number,
     required: true
   },
+  icon: {
+    type: String,
+    default: ''
+  },
   isAction: {
     type: Boolean,
     default: false
@@ -68,5 +72,8 @@ const MenuSchema = new mongoose.Schema({
 }, {
   timestamps: true
 });
+
+// Compound Index für schnelle Suche
+MenuSchema.index({ year: 1, weekNumber: 1 });
 
 export default mongoose.model('Menu', MenuSchema);
