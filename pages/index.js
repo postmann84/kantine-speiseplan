@@ -284,10 +284,10 @@ export default function Home() {
               <p className="text-gray-800">11:30 - 14:00 Uhr</p>
             </div>
           </div>
-        </div>
-        <div className="mt-2 text-sm text-gray-600">
-          <p>Telefon: {menu.contactInfo?.phone}</p>
-          <p>Für Postfremde erhöht sich der Preis um {menu.contactInfo?.postcode} €</p>
+          <div className="mt-4 pt-3 border-t border-gray-100 text-sm text-gray-600">
+            <p>Telefon: {menu.contactInfo?.phone}</p>
+            <p>Für Postfremde erhöht sich der Preis um {menu.contactInfo?.postcode} €</p>
+          </div>
         </div>
       </header>
 
