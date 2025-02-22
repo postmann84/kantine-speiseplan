@@ -234,7 +234,7 @@ export default function Home() {
                     >
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
-                          <span className="mr-2">{meal.name}</span>
+                          <span className="mr-2 font-medium">{meal.name}</span>
                           {meal.isAction && (
                             <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded">
                               Aktionsessen
@@ -242,12 +242,12 @@ export default function Home() {
                           )}
                         </div>
                         {meal.isAction && meal.actionNote && (
-                          <div className="text-sm text-yellow-800 mt-1">{meal.actionNote}</div>
+                          <div className="text-sm text-yellow-800 mt-1 font-medium">{meal.actionNote}</div>
                         )}
                       </div>
                       <div className="flex items-center">
                         <span className="text-xl mr-2">{meal.icon}</span>
-                        <span className="text-gray-600 font-medium">
+                        <span className="text-gray-700 font-semibold">
                           {meal.price.toFixed(2)} €
                         </span>
                       </div>
