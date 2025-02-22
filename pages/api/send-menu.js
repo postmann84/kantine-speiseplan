@@ -23,18 +23,18 @@ export default async function handler(req, res) {
     console.log('SMTP Config:', {
         host: process.env.SMTP_HOST,
         port: process.env.SMTP_PORT,
-        user: process.env.SMTP_USER ? '✓ Present' : '✗ Missing',
-        pass: process.env.SMTP_PASS ? '✓ Present' : '✗ Missing'
+        user: process.env.EMAIL_USER ? '✓ Present' : '✗ Missing',
+        pass: process.env.EMAIL_PASSWORD ? '✓ Present' : '✗ Missing'
     });
 
     const transporter = nodemailer.createTransport({
         host: process.env.SMTP_HOST,
         port: process.env.SMTP_PORT,
-        secure: true, // für Port 465
+        secure: true,
         auth: {
-            user: process.env.SMTP_USER,
-            pass: process.env.SMTP_PASS,
-        },
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASSWORD,
+        }
     });
 
     // Teste die SMTP-Verbindung
