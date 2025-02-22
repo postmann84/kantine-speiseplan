@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import QRCode from 'qrcode';
 
 // Hilfsfunktion um die Kalenderwoche zu berechnen
 function getWeek(date) {
@@ -27,14 +28,20 @@ export default async function handler(req, res) {
         pass: process.env.EMAIL_PASSWORD ? '✓ Present' : '✗ Missing'
     });
 
+    const websiteUrl = process.env.NEXT_PUBLIC_WEBSITE_URL;
+    
+    // QR-Code direkt generieren
+    const qrCodeDataUrl = await QRCode.toDataURL(websiteUrl);
+    const qrCodeBase64 = qrCodeDataUrl.split(',')[1];
+
     const transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST,
-        port: process.env.SMTP_PORT,
-        secure: true,
-        auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASSWORD,
-        }
+      host: process.env.SMTP_HOST,
+      port: process.env.SMTP_PORT,
+      secure: true,
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASSWORD,
+      }
     });
 
     // Teste die SMTP-Verbindung
@@ -42,7 +49,6 @@ export default async function handler(req, res) {
     console.log('SMTP connection verified successfully');
 
     const { weekStart, weekEnd } = req.body;
-    const websiteUrl = process.env.NEXT_PUBLIC_WEBSITE_URL;
     const recipient = process.env.EMAIL_RECIPIENTS;
 
     // Formatiere das Datum im gewünschten Format (TT.MM.-TT.MM.JJJJ)
@@ -86,7 +92,8 @@ export default async function handler(req, res) {
       html: emailHtml,
       attachments: [{
         filename: 'qrcode.png',
-        path: `${process.env.NEXT_PUBLIC_WEBSITE_URL}/api/qr-code?url=${encodeURIComponent(process.env.NEXT_PUBLIC_WEBSITE_URL)}`,
+        content: qrCodeBase64,
+        encoding: 'base64',
         cid: 'qrcode'
       }]
     };
