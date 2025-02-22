@@ -289,7 +289,7 @@ export default function Home() {
             </div>
             
             {/* Rechte Spalte: Kontaktinfo */}
-            <div className="text-right">
+            <div className="text-right mt-8">
               <p className="text-gray-600">Telefon: {menu.contactInfo?.phone}</p>
               <p className="text-gray-600 mt-2">Für Postfremde erhöht sich der Preis um {menu.contactInfo?.postcode} €</p>
             </div>
