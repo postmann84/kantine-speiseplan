@@ -21,18 +21,20 @@ export default async function handler(req, res) {
 
   try {
     console.log('Starting email send process...');
+    
+    // Debug-Logging für SMTP-Konfiguration
     console.log('SMTP Config:', {
-        host: process.env.SMTP_HOST,
-        port: process.env.SMTP_PORT,
-        user: process.env.EMAIL_USER ? '✓ Present' : '✗ Missing',
-        pass: process.env.EMAIL_PASSWORD ? '✓ Present' : '✗ Missing'
+      host: process.env.SMTP_HOST || 'nicht gesetzt',
+      port: process.env.SMTP_PORT || 'nicht gesetzt',
+      user: process.env.EMAIL_USER ? '✓ vorhanden' : '✗ fehlt',
+      pass: process.env.EMAIL_PASSWORD ? '✓ vorhanden' : '✗ fehlt',
+      websiteUrl: process.env.NEXT_PUBLIC_WEBSITE_URL || 'nicht gesetzt'
     });
 
-    const websiteUrl = process.env.NEXT_PUBLIC_WEBSITE_URL;
-    
-    // QR-Code generieren
-    const qrCodeDataUrl = await QRCode.toDataURL(websiteUrl);
-    const qrCodeBase64 = qrCodeDataUrl.split(',')[1];
+    const { weekStart, weekEnd } = req.body;
+    if (!weekStart || !weekEnd) {
+      throw new Error('Wochendaten fehlen');
+    }
 
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
@@ -44,11 +46,21 @@ export default async function handler(req, res) {
       }
     });
 
-    await transporter.verify();
-    console.log('SMTP connection verified successfully');
+    // SMTP-Verbindung testen
+    try {
+      await transporter.verify();
+      console.log('SMTP-Verbindung erfolgreich getestet');
+    } catch (smtpError) {
+      console.error('SMTP-Verbindungsfehler:', smtpError);
+      throw new Error(`SMTP-Verbindungsfehler: ${smtpError.message}`);
+    }
 
-    const { weekStart, weekEnd } = req.body;
     const dateRange = formatDateRange(weekStart, weekEnd);
+    const websiteUrl = process.env.NEXT_PUBLIC_WEBSITE_URL;
+
+    // QR-Code generieren
+    const qrCodeDataUrl = await QRCode.toDataURL(websiteUrl);
+    const qrCodeBase64 = qrCodeDataUrl.split(',')[1];
 
     // Formatiere das Datum im gewünschten Format (TT.MM.-TT.MM.JJJJ)
     const formatDateRange = (start, end) => {
@@ -62,7 +74,10 @@ export default async function handler(req, res) {
       return `${startDay}.${startMonth}.-${endDay}.${endMonth}.${year}`;
     };
 
-    console.log('Sende E-Mail an Kontaktgruppen...');
+    console.log('Sende E-Mail mit folgenden Details:');
+    console.log('Von:', process.env.EMAIL_USER);
+    console.log('Betreff:', `Speiseplan ${dateRange}`);
+
     const emailHtml = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2 style="color: #1a365d;">Neuer Speiseplan verfügbar</h2>
@@ -75,14 +90,14 @@ export default async function handler(req, res) {
       </div>
     `;
 
-    // E-Mail-Konfiguration mit Web.de Kontaktgruppen
+    // E-Mail-Konfiguration
     const mailOptions = {
       from: {
         name: 'Betriebskantine',
         address: process.env.EMAIL_USER
       },
-      to: process.env.EMAIL_USER, // Hauptempfänger ist die eigene Adresse
-      //bcc: ['Mittagskarte', 'Kollegen'], // Web.de Kontaktgruppen-Namen
+      to: process.env.EMAIL_USER,
+      //bcc: ['Mittagskarte', 'Kollegen'],
       subject: `Speiseplan ${dateRange}`,
       html: emailHtml,
       attachments: [{
@@ -104,10 +119,12 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
-    console.error('Detailed error information:', error);
+    console.error('Detaillierte Fehlerinformation:', error);
     return res.status(500).json({ 
+      success: false,
       message: 'Fehler beim E-Mail-Versand',
-      error: error.message
+      error: error.message,
+      details: error.stack
     });
   }
 } 
