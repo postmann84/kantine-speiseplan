@@ -82,7 +82,7 @@ export default async function handler(req, res) {
         address: process.env.EMAIL_USER
       },
       to: process.env.EMAIL_USER, // Hauptempfänger ist die eigene Adresse
-      bcc: ['Mittagskarte', 'Kollegen'], // Web.de Kontaktgruppen-Namen
+      //bcc: ['Mittagskarte', 'Kollegen'], // Web.de Kontaktgruppen-Namen
       subject: `Speiseplan ${dateRange}`,
       html: emailHtml,
       attachments: [{
