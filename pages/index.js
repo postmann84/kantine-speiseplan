@@ -318,7 +318,7 @@ export default function Home() {
           <p className="mb-2">Speiseplan direkt auf dem Smartphone:</p>
           <div className="p-2 bg-white rounded-lg shadow-sm">
             <QRCodeSVG 
-              value={typeof window !== 'undefined' ? window.location.href : ''}
+              value={process.env.NEXT_PUBLIC_WEBSITE_URL || window.location.href}
               size={100}
               level="L"
               includeMargin={true}
