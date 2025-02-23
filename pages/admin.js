@@ -257,35 +257,58 @@ export default function Admin() {
     }
   };
 
-  // E-Mail-Versand Funktion
-  const handleSendEmail = async () => {
+  const handleEmailSend = async () => {
     try {
       setIsSending(true);
-      setEmailStatus('Sende E-Mail...');
-      
-      const response = await fetch('/api/send-menu', {
+      setEmailStatus('Speichere Speiseplan...');
+
+      // Zuerst den Speiseplan speichern (gleiche Logik wie handleSave)
+      const menuData = {
+        weekStart: dateRange.start,
+        weekEnd: dateRange.end,
+        days: weekMenu,
+        contactInfo: contactInfo,
+        vacation: vacationData,
+        createdAt: new Date()
+      };
+
+      const saveResponse = await fetch('/api/menu', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(menuData)
+      });
+
+      if (!saveResponse.ok) {
+        throw new Error('Fehler beim Speichern des Speiseplans');
+      }
+
+      setEmailStatus('Speiseplan gespeichert. Starte E-Mail-Versand...');
+
+      // Dann E-Mail versenden
+      const emailResponse = await fetch('/api/send-menu', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           weekStart: dateRange.start,
-          weekEnd: dateRange.end,
-        }),
+          weekEnd: dateRange.end
+        })
       });
 
-      const responseData = await response.json();
-      console.log('E-Mail-Versand Response:', responseData);
-
-      if (!response.ok) {
-        throw new Error(responseData.error || 'E-Mail-Versand fehlgeschlagen');
+      if (!emailResponse.ok) {
+        const errorData = await emailResponse.json();
+        throw new Error(errorData.message || 'E-Mail-Versand fehlgeschlagen');
       }
 
-      setEmailStatus('E-Mail erfolgreich versendet!');
-      setTimeout(() => setEmailStatus(''), 3000);
+      const emailResult = await emailResponse.json();
+      setEmailStatus(`E-Mail wurde erfolgreich versendet! (Message ID: ${emailResult.messageId})`);
+
     } catch (error) {
-      console.error('Fehler beim E-Mail-Versand:', error);
-      setEmailStatus(`Fehler beim E-Mail-Versand: ${error.message}`);
+      console.error('Fehler:', error);
+      setEmailStatus(`Fehler: ${error.message}`);
     } finally {
       setIsSending(false);
     }
@@ -616,12 +639,11 @@ export default function Admin() {
           {/* Buttons am Ende der Seite */}
           <div className="mt-8 flex gap-4 justify-end">
             <button
-              onClick={handleSendEmail}
-              type="button"
+              onClick={handleEmailSend}
               disabled={isSending}
-              className="px-4 py-2 bg-yellow-400 text-gray-800 rounded hover:bg-yellow-500 disabled:opacity-50"
+              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:bg-gray-400"
             >
-              {isSending ? 'Sende...' : 'Per E-Mail versenden'}
+              {isSending ? 'Wird versendet...' : 'Per E-Mail versenden'}
             </button>
             
             <button
@@ -645,13 +667,9 @@ export default function Admin() {
         </form>
 
         {/* Status-Meldung */}
-        {emailStatus && (
-          <div className={`mt-4 p-4 rounded ${
-            emailStatus.includes('erfolgreich') ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-          }`}>
-            {emailStatus}
-          </div>
-        )}
+        <div className="mt-2 text-sm">
+          {emailStatus && <p className="text-gray-600">{emailStatus}</p>}
+        </div>
       </div>
     </div>
   );
