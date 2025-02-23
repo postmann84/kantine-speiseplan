@@ -1,6 +1,18 @@
 import nodemailer from 'nodemailer';
 import QRCode from 'qrcode';
 
+// Hilfsfunktion zum Formatieren des Datums
+const formatDateRange = (start, end) => {
+  const startDate = new Date(start);
+  const endDate = new Date(end);
+  const startDay = startDate.getDate().toString().padStart(2, '0');
+  const startMonth = (startDate.getMonth() + 1).toString().padStart(2, '0');
+  const endDay = endDate.getDate().toString().padStart(2, '0');
+  const endMonth = (endDate.getMonth() + 1).toString().padStart(2, '0');
+  const year = endDate.getFullYear();
+  return `${startDay}.${startMonth}.-${endDay}.${endMonth}.${year}`;
+};
+
 // Hilfsfunktion um die Kalenderwoche zu berechnen
 function getWeek(date) {
   const target = new Date(date);
@@ -36,6 +48,9 @@ export default async function handler(req, res) {
       throw new Error('Wochendaten fehlen');
     }
 
+    const dateRange = formatDateRange(weekStart, weekEnd);
+    const websiteUrl = process.env.NEXT_PUBLIC_WEBSITE_URL;
+
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       port: process.env.SMTP_PORT,
@@ -55,28 +70,9 @@ export default async function handler(req, res) {
       throw new Error(`SMTP-Verbindungsfehler: ${smtpError.message}`);
     }
 
-    const dateRange = formatDateRange(weekStart, weekEnd);
-    const websiteUrl = process.env.NEXT_PUBLIC_WEBSITE_URL;
-
     // QR-Code generieren
     const qrCodeDataUrl = await QRCode.toDataURL(websiteUrl);
     const qrCodeBase64 = qrCodeDataUrl.split(',')[1];
-
-    // Formatiere das Datum im gewünschten Format (TT.MM.-TT.MM.JJJJ)
-    const formatDateRange = (start, end) => {
-      const startDate = new Date(start);
-      const endDate = new Date(end);
-      const startDay = startDate.getDate().toString().padStart(2, '0');
-      const startMonth = (startDate.getMonth() + 1).toString().padStart(2, '0');
-      const endDay = endDate.getDate().toString().padStart(2, '0');
-      const endMonth = (endDate.getMonth() + 1).toString().padStart(2, '0');
-      const year = endDate.getFullYear();
-      return `${startDay}.${startMonth}.-${endDay}.${endMonth}.${year}`;
-    };
-
-    console.log('Sende E-Mail mit folgenden Details:');
-    console.log('Von:', process.env.EMAIL_USER);
-    console.log('Betreff:', `Speiseplan ${dateRange}`);
 
     const emailHtml = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -108,6 +104,10 @@ export default async function handler(req, res) {
         contentType: 'image/png'
       }]
     };
+
+    console.log('Sende E-Mail mit folgenden Details:');
+    console.log('Von:', process.env.EMAIL_USER);
+    console.log('Betreff:', `Speiseplan ${dateRange}`);
 
     const info = await transporter.sendMail(mailOptions);
     console.log('E-Mail erfolgreich versendet:', info.messageId);
