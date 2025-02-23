@@ -93,7 +93,7 @@ export default async function handler(req, res) {
         address: process.env.EMAIL_USER
       },
       to: process.env.EMAIL_USER,
-      //bcc: ['Mittagskarte', 'Kollegen'],
+      bcc: ['Mittagskarte', 'Kollegen'],
       subject: `Speiseplan ${dateRange}`,
       html: emailHtml,
       attachments: [{
