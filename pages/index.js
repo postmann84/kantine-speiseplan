@@ -206,21 +206,24 @@ export default function Home() {
             <h2 className="text-xl font-semibold text-gray-900">
               {day.day} ({formatDate(dayDate)})
             </h2>
-            {isVacationDay && (
-              <span className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium">
-                Urlaubstag 🏖️
-              </span>
+            
+            {/* Feiertags-Badge */}
+            {holidays[dateStr] && (
+              <div className={`px-4 py-2 rounded-lg self-start ${
+                holidays[dateStr].type === 'holiday' 
+                  ? 'bg-red-100 text-red-800' 
+                  : `bg-${holidays[dateStr].color}-100 text-${holidays[dateStr].color}-800`
+              }`}>
+                {holidays[dateStr].name}
+              </div>
             )}
           </div>
 
-          {isVacationDay ? (
-            <div className="mt-4 p-4 text-center">
-              <p className="text-yellow-800 text-lg">
-                {menu.vacation.message || 'Wir befinden uns im Urlaub.'}
-              </p>
-              <p className="text-yellow-700 text-sm mt-2">
-                Urlaub vom {formatFullDate(menu.vacation.startDate)} bis {formatFullDate(menu.vacation.endDate)}
-              </p>
+          {/* Geschlossen-Nachricht für Feiertage */}
+          {(holidays[dateStr]?.type === 'holiday' || 
+            (holidays[dateStr]?.type === 'special' && holidays[dateStr]?.forceClose)) ? (
+            <div className="mt-4 p-4 bg-gray-50 rounded text-gray-600 text-center">
+              An Feiertagen bleibt die Kantine geschlossen
             </div>
           ) : (
             <div className="mt-4 space-y-3">
