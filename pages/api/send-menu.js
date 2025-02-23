@@ -30,7 +30,7 @@ export default async function handler(req, res) {
 
     const websiteUrl = process.env.NEXT_PUBLIC_WEBSITE_URL;
     
-    // QR-Code direkt generieren
+    // QR-Code generieren
     const qrCodeDataUrl = await QRCode.toDataURL(websiteUrl);
     const qrCodeBase64 = qrCodeDataUrl.split(',')[1];
 
@@ -44,12 +44,11 @@ export default async function handler(req, res) {
       }
     });
 
-    // Teste die SMTP-Verbindung
     await transporter.verify();
     console.log('SMTP connection verified successfully');
 
     const { weekStart, weekEnd } = req.body;
-    const recipient = process.env.EMAIL_RECIPIENTS;
+    const dateRange = formatDateRange(weekStart, weekEnd);
 
     // Formatiere das Datum im gewünschten Format (TT.MM.-TT.MM.JJJJ)
     const formatDateRange = (start, end) => {
@@ -63,13 +62,7 @@ export default async function handler(req, res) {
       return `${startDay}.${startMonth}.-${endDay}.${endMonth}.${year}`;
     };
 
-    const dateRange = formatDateRange(weekStart, weekEnd);
-
-    console.log('Sende E-Mail mit folgenden Details:');
-    console.log('Von:', 'Postmann65@web.de');
-    console.log('An:', recipient);
-    console.log('Betreff:', `Speiseplan ${dateRange}`);
-
+    console.log('Sende E-Mail an Kontaktgruppen...');
     const emailHtml = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2 style="color: #1a365d;">Neuer Speiseplan verfügbar</h2>
@@ -82,12 +75,14 @@ export default async function handler(req, res) {
       </div>
     `;
 
+    // E-Mail-Konfiguration mit Web.de Kontaktgruppen
     const mailOptions = {
       from: {
         name: 'Betriebskantine',
         address: process.env.EMAIL_USER
       },
-      to: recipient,
+      to: process.env.EMAIL_USER, // Hauptempfänger ist die eigene Adresse
+      bcc: ['Mittagskarte', 'Kollegen'], // Web.de Kontaktgruppen-Namen
       subject: `Speiseplan ${dateRange}`,
       html: emailHtml,
       attachments: [{
@@ -99,31 +94,20 @@ export default async function handler(req, res) {
       }]
     };
 
-    console.log('Starte E-Mail-Versand...');
     const info = await transporter.sendMail(mailOptions);
-    console.log('E-Mail erfolgreich versendet:', info);
+    console.log('E-Mail erfolgreich versendet:', info.messageId);
 
     res.status(200).json({ 
       success: true, 
       message: 'E-Mail wurde erfolgreich versendet',
       messageId: info.messageId
     });
+
   } catch (error) {
-    console.error('Detailed error information:');
-    console.error('Error name:', error.name);
-    console.error('Error message:', error.message);
-    console.error('Error stack:', error.stack);
-    console.error('Error code:', error.code);
-    console.error('Error command:', error.command);
-    
+    console.error('Detailed error information:', error);
     return res.status(500).json({ 
-        message: 'Fehler beim E-Mail-Versand',
-        error: error.message,
-        errorDetails: {
-            name: error.name,
-            code: error.code,
-            command: error.command
-        }
+      message: 'Fehler beim E-Mail-Versand',
+      error: error.message
     });
   }
 } 
