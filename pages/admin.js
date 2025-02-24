@@ -4,9 +4,27 @@ import { getHolidaysForWeek } from '../lib/holidays';
 import { formatDate } from '../lib/dateUtils';
 
 export default function Admin() {
+  // Auth state
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
   const [password, setPassword] = useState('');
+
+  // Bestehende States
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+  const [emailStatus, setEmailStatus] = useState('');
+  const [weekMenu, setWeekMenu] = useState([]);
+  const [dateRange, setDateRange] = useState({ start: '', end: '' });
+  const [holidays, setHolidays] = useState({});
+  const [contactInfo, setContactInfo] = useState({ phone: '', postcode: '' });
+  const [vacationData, setVacationData] = useState({
+    isOnVacation: false,
+    startDate: '',
+    endDate: '',
+    message: ''
+  });
+  const [availableMenus, setAvailableMenus] = useState([]);
 
   useEffect(() => {
     // Prüfe beim Laden der Seite, ob der User authentifiziert ist
@@ -20,11 +38,11 @@ export default function Admin() {
     } catch (error) {
       setIsAuthenticated(false);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  if (isLoading) {
+  if (loading) {
     return <div>Laden...</div>;
   }
 
