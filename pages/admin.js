@@ -42,6 +42,46 @@ export default function Admin() {
     }
   };
 
+  // Formular-Handler
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    try {
+      // Deine bestehende Submit-Logik
+      setSuccess(true);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEmailSend = async () => {
+    setIsSending(true);
+    try {
+      const response = await fetch('/api/send-menu', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          weekStart: dateRange.start,
+          weekEnd: dateRange.end,
+        }),
+      });
+      
+      if (!response.ok) throw new Error('E-Mail konnte nicht versendet werden');
+      
+      setEmailStatus('E-Mail wurde erfolgreich versendet');
+    } catch (error) {
+      setEmailStatus('Fehler beim Versenden der E-Mail');
+      console.error(error);
+    } finally {
+      setIsSending(false);
+    }
+  };
+
   if (loading) {
     return <div>Laden...</div>;
   }
