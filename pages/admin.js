@@ -17,6 +17,15 @@ const sessionOptions = {
 
 // Server-side props mit Authentifizierungsprüfung
 export async function getServerSideProps({ req, res }) {
+  // Temporäre Änderung: Überspringen der Authentifizierungsprüfung
+  return {
+    props: {
+      isLoggedIn: true // Immer als eingeloggt betrachten
+    }
+  };
+  
+  // Original-Code (auskommentiert für späteren Gebrauch)
+  /* 
   const session = await getIronSession(req, res, sessionOptions);
 
   if (!session.isLoggedIn) {
@@ -32,6 +41,7 @@ export async function getServerSideProps({ req, res }) {
       isLoggedIn: true
     }
   };
+  */
 }
 
 export default function Admin({ isLoggedIn }) {
