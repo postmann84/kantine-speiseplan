@@ -285,6 +285,8 @@ export default function Admin({ isLoggedIn }) {
 
       // Zuerst den Speiseplan speichern (gleiche Logik wie handleSave)
       const menuData = {
+        year: selectedWeek.year,
+        weekNumber: selectedWeek.week,
         weekStart: weekDates.start,
         weekEnd: weekDates.end,
         days: weekMenu,
@@ -307,7 +309,7 @@ export default function Admin({ isLoggedIn }) {
 
       setEmailStatus('Speiseplan gespeichert. Starte E-Mail-Versand...');
 
-      // Dann E-Mail versenden
+      // Dann E-Mail versenden - übergebe jetzt auch die Wochennummer und das Jahr
       const emailResponse = await fetch('/api/send-menu', {
         method: 'POST',
         headers: {
@@ -315,7 +317,9 @@ export default function Admin({ isLoggedIn }) {
         },
         body: JSON.stringify({
           weekStart: weekDates.start,
-          weekEnd: weekDates.end
+          weekEnd: weekDates.end,
+          weekNumber: selectedWeek.week,
+          year: selectedWeek.year
         })
       });
 

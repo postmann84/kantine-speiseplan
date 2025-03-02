@@ -1,16 +1,9 @@
 import nodemailer from 'nodemailer';
 import QRCode from 'qrcode';
+import { getWeekDates } from '../../lib/dateUtils';
 
 // Hilfsfunktion zum Formatieren des Datums
-const formatDateRange = (start, end) => {
-  const startDate = new Date(start);
-  // Montag als Starttag der Woche verwenden (1 Tag später als eine Woche vor dem Versand)
-  startDate.setDate(startDate.getDate());
-  
-  // Berechne tatsächliches Ende der Speiseplanwoche (Freitag)
-  const endDate = new Date(startDate);
-  endDate.setDate(startDate.getDate() + 4); // Freitag ist 4 Tage nach Montag
-
+const formatDateRange = (startDate, endDate) => {
   const startDay = startDate.getDate().toString().padStart(2, '0');
   const startMonth = (startDate.getMonth() + 1).toString().padStart(2, '0');
   const endDay = endDate.getDate().toString().padStart(2, '0');
@@ -49,14 +42,32 @@ export default async function handler(req, res) {
       websiteUrl: process.env.NEXT_PUBLIC_WEBSITE_URL || 'nicht gesetzt'
     });
 
-    const { weekStart, weekEnd } = req.body;
-    if (!weekStart || !weekEnd) {
-      throw new Error('Wochendaten fehlen');
+    const { weekStart, weekEnd, weekNumber, year } = req.body;
+    if (!weekNumber || !year) {
+      // Fallback auf alte Implementierung, wenn weekNumber und year fehlen
+      if (!weekStart || !weekEnd) {
+        throw new Error('Keine ausreichenden Wochendaten vorhanden');
+      }
+    }
+
+    // Wochendaten entweder aus weekNumber und year berechnen oder aus den übergebenen Daten verwenden
+    let actualWeekDates;
+    if (weekNumber && year) {
+      // Nutze die Funktion aus dateUtils.js um Montag und Freitag für die ausgewählte Woche zu berechnen
+      actualWeekDates = getWeekDates(year, weekNumber);
+    } else {
+      // Fallback: Verwende das alte Verfahren
+      actualWeekDates = {
+        start: new Date(weekStart),
+        end: new Date(weekEnd)
+      };
     }
 
     // Formatiere das Datum korrekt für die ausgewählte Woche
-    const dateRange = formatDateRange(weekStart, weekEnd);
+    const dateRange = formatDateRange(actualWeekDates.start, actualWeekDates.end);
     const websiteUrl = process.env.NEXT_PUBLIC_WEBSITE_URL;
+
+    console.log('Verwende Datumszeitraum:', dateRange);
 
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
