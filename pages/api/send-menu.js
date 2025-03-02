@@ -111,12 +111,7 @@ export default async function handler(req, res) {
         address: process.env.EMAIL_USER
       },
       to: process.env.EMAIL_USER,
-      // Die Kontaktgruppen müssen als E-Mail-Adressen formatiert werden
-      bcc: [
-        // Format: Gruppenname <E-Mail-Adresse>
-        'Mittagskarte <' + process.env.EMAIL_USER + '>',
-        'Kollegen <' + process.env.EMAIL_USER + '>'
-      ],
+      bcc: ['Mittagskarte'],
       subject: `Speiseplan ${dateRange}`,
       html: emailHtml,
       attachments: [{
