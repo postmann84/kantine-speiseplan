@@ -4,7 +4,13 @@ import QRCode from 'qrcode';
 // Hilfsfunktion zum Formatieren des Datums
 const formatDateRange = (start, end) => {
   const startDate = new Date(start);
-  const endDate = new Date(end);
+  // Montag als Starttag der Woche verwenden (1 Tag später als eine Woche vor dem Versand)
+  startDate.setDate(startDate.getDate());
+  
+  // Berechne tatsächliches Ende der Speiseplanwoche (Freitag)
+  const endDate = new Date(startDate);
+  endDate.setDate(startDate.getDate() + 4); // Freitag ist 4 Tage nach Montag
+
   const startDay = startDate.getDate().toString().padStart(2, '0');
   const startMonth = (startDate.getMonth() + 1).toString().padStart(2, '0');
   const endDay = endDate.getDate().toString().padStart(2, '0');
@@ -48,6 +54,7 @@ export default async function handler(req, res) {
       throw new Error('Wochendaten fehlen');
     }
 
+    // Formatiere das Datum korrekt für die ausgewählte Woche
     const dateRange = formatDateRange(weekStart, weekEnd);
     const websiteUrl = process.env.NEXT_PUBLIC_WEBSITE_URL;
 
