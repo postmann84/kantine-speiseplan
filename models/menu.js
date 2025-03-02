@@ -43,7 +43,15 @@ const DaySchema = new mongoose.Schema({
   }
 });
 
-const MenuSchema = new mongoose.Schema({
+const WeekMenuSchema = new mongoose.Schema({
+  weekNumber: {
+    type: Number,
+    required: true
+  },
+  year: {
+    type: Number,
+    required: true
+  },
   weekStart: {
     type: Date,
     required: true
@@ -51,6 +59,10 @@ const MenuSchema = new mongoose.Schema({
   weekEnd: {
     type: Date,
     required: true
+  },
+  isPublished: {
+    type: Boolean,
+    default: false
   },
   days: [DaySchema],
   contactInfo: {
@@ -74,6 +86,51 @@ const MenuSchema = new mongoose.Schema({
 });
 
 // Compound Index für schnelle Suche
-MenuSchema.index({ year: 1, weekNumber: 1 });
+WeekMenuSchema.index({ year: 1, weekNumber: 1 }, { unique: true });
 
-export default mongoose.model('Menu', MenuSchema);
+// Verbesserte Version des Pre-save Hooks
+WeekMenuSchema.pre('save', async function(next) {
+  try {
+    // Nur wenn das Dokument als veröffentlicht markiert werden soll
+    if (this.isPublished) {
+      // Setze alle anderen Dokumente auf nicht veröffentlicht
+      await mongoose.model('Menu').updateMany(
+        { 
+          _id: { $ne: this._id },
+          isPublished: true 
+        },
+        { 
+          $set: { isPublished: false } 
+        }
+      );
+    }
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Middleware für findOneAndUpdate und findByIdAndUpdate
+WeekMenuSchema.pre(['findOneAndUpdate', 'findByIdAndUpdate'], async function(next) {
+  try {
+    const update = this.getUpdate();
+    // Prüfe, ob das Update isPublished auf true setzt
+    if (update.$set?.isPublished === true || update.isPublished === true) {
+      // Setze alle anderen Dokumente auf nicht veröffentlicht
+      await mongoose.model('Menu').updateMany(
+        { 
+          _id: { $ne: this._conditions._id },
+          isPublished: true 
+        },
+        { 
+          $set: { isPublished: false } 
+        }
+      );
+    }
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
+export default mongoose.model('Menu', WeekMenuSchema);

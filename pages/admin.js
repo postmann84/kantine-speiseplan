@@ -1,19 +1,62 @@
 import { useState, useEffect } from 'react';
 import { Save, Loader, AlertCircle } from 'lucide-react';
 import { getHolidaysForWeek } from '../lib/holidays';
-import { formatDate } from '../lib/dateUtils';
+import { formatDate, getWeekNumber, getWeekDates } from '../lib/dateUtils';
+import Login from '../components/Login';
+import { getIronSession } from 'iron-session';
 
-export default function Admin() {
+// Session-Optionen
+const sessionOptions = {
+  password: process.env.SECRET_COOKIE_PASSWORD || 'complex_password_at_least_32_characters_long',
+  cookieName: 'admin-session',
+  cookieOptions: {
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+  },
+};
+
+// Server-side props mit Authentifizierungsprüfung
+export async function getServerSideProps({ req, res }) {
+  const session = await getIronSession(req, res, sessionOptions);
+
+  if (!session.isLoggedIn) {
+    return {
+      props: {
+        isLoggedIn: false
+      }
+    };
+  }
+
+  return {
+    props: {
+      isLoggedIn: true
+    }
+  };
+}
+
+export default function Admin({ isLoggedIn }) {
+  // Wenn nicht eingeloggt, zeige Login-Komponente
+  if (!isLoggedIn) {
+    return <Login />;
+  }
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
   
-  const [dateRange, setDateRange] = useState({
-    start: new Date().toISOString().split('T')[0],
-    end: new Date().toISOString().split('T')[0]
+  const [selectedWeek, setSelectedWeek] = useState(() => {
+    const today = new Date();
+    return getWeekNumber(today);
   });
+
+  const [weekDates, setWeekDates] = useState(() => {
+    const today = new Date();
+    const { year, week } = getWeekNumber(today);
+    return getWeekDates(year, week);
+  });
+
+  const [isPublished, setIsPublished] = useState(false);
   
-  // Vorinitialisierte Wochentage mit zwei Gerichten und Standardpreisen
   const [weekMenu, setWeekMenu] = useState([
     { 
       day: 'Montag', 
@@ -80,78 +123,54 @@ export default function Admin() {
     meal2: 6.80
   };
 
-  // Vereinfachter useEffect zum Laden des aktuellen Menüs
+  // Laden des Menüs für die ausgewählte Woche
   useEffect(() => {
     const fetchMenu = async () => {
       try {
-        const response = await fetch('/api/menu');
+        setLoading(true);
+        const response = await fetch(`/api/menu/${selectedWeek.year}/${selectedWeek.week}`);
         const data = await response.json();
         
         if (data.success && data.data) {
-          // Setze die Kontaktinformationen
-          setContactInfo({
-            phone: data.data.contactInfo?.phone || '',
-            postcode: data.data.contactInfo?.postcode || ''
+          const menu = data.data;
+          setWeekMenu(menu.days || []);
+          setContactInfo(menu.contactInfo || { phone: '', postcode: '' });
+          setVacationData(menu.vacation || {
+            isOnVacation: false,
+            startDate: '',
+            endDate: '',
+            message: 'Wir befinden uns im Urlaub.'
           });
-
-          // Setze den Zeitraum
-          if (data.data.weekStart && data.data.weekEnd) {
-            setDateRange({
-              start: data.data.weekStart.split('T')[0],
-              end: data.data.weekEnd.split('T')[0]
-            });
-          }
-
-          // Setze die Urlaubsinformationen
-          if (data.data.vacation) {
-            setVacationData({
-              isOnVacation: data.data.vacation.isOnVacation || false,
-              startDate: data.data.vacation.startDate ? data.data.vacation.startDate.split('T')[0] : '',
-              endDate: data.data.vacation.endDate ? data.data.vacation.endDate.split('T')[0] : '',
-              message: data.data.vacation.message || 'Wir befinden uns im Urlaub.'
-            });
-          }
-
-          // Setze die Tagesmenüs
-          if (data.data.days && data.data.days.length > 0) {
-            setWeekMenu(data.data.days);
-          }
+          setIsPublished(menu.isPublished || false);
+        } else {
+          // Wenn kein Menü gefunden wurde, setze Standardwerte
+          setWeekMenu([
+            { day: 'Montag', meals: [{ name: '', price: 4.80, isAction: false }, { name: '', price: 6.80, isAction: false }] },
+            { day: 'Dienstag', meals: [{ name: '', price: 4.80, isAction: false }, { name: '', price: 6.80, isAction: false }] },
+            { day: 'Mittwoch', meals: [{ name: '', price: 4.80, isAction: false }, { name: '', price: 6.80, isAction: false }] },
+            { day: 'Donnerstag', meals: [{ name: '', price: 4.80, isAction: false }, { name: '', price: 6.80, isAction: false }] },
+            { day: 'Freitag', meals: [{ name: '', price: 4.80, isAction: false }, { name: '', price: 6.80, isAction: false }] }
+          ]);
+          setIsPublished(false);
         }
       } catch (error) {
         console.error('Fehler beim Laden des Menüs:', error);
         setError('Fehler beim Laden des Menüs');
+      } finally {
+        setLoading(false);
       }
     };
 
-    fetchMenu();
-  }, []);
-
-  // Aktualisiere Feiertage wenn sich das Datum ändert
-  useEffect(() => {
-    if (dateRange.start) {
-      const weekHolidays = getHolidaysForWeek(dateRange.start);
-      setHolidays(weekHolidays);
-    }
-  }, [dateRange.start]);
-
-  // Hilfsfunktionen
-  const calculateFriday = (dateStr) => {
-    const date = new Date(dateStr);
-    const friday = new Date(date);
-    friday.setDate(date.getDate() + (5 - date.getDay()));
-    return friday;
-  };
-
-  // Handler für Datumsänderung
-  const handleStartDateChange = (e) => {
-    const newStart = e.target.value;
-    const newEndDate = calculateFriday(newStart);
+    // Aktualisiere weekDates wenn sich die ausgewählte Woche ändert
+    const dates = getWeekDates(selectedWeek.year, selectedWeek.week);
+    setWeekDates(dates);
     
-    setDateRange({
-      start: newStart,
-      end: newEndDate.toISOString().split('T')[0]
-    });
-  };
+    // Hole Feiertage für die neue Woche
+    const weekHolidays = getHolidaysForWeek(dates.start);
+    setHolidays(weekHolidays);
+
+    fetchMenu();
+  }, [selectedWeek]);
 
   // Funktion zum Hinzufügen einer Mahlzeit
   const addMeal = (dayIndex) => {
@@ -210,7 +229,7 @@ export default function Admin() {
     });
   };
 
-  // Vereinfachter handleSubmit
+  // Angepasster handleSubmit
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -218,20 +237,12 @@ export default function Admin() {
     setSuccess(false);
 
     const menuData = {
-      weekStart: new Date(dateRange.start),
-      weekEnd: new Date(dateRange.end),
-      days: weekMenu.map(day => ({
-        day: day.day,
-        meals: day.meals.map(meal => ({
-          name: meal.name,
-          price: meal.price,
-          icon: meal.icon,
-          isAction: Boolean(meal.isAction),
-          actionNote: meal.actionNote || ''
-        })),
-        isClosed: day.isClosed,
-        closedReason: day.closedReason || ''
-      })),
+      year: selectedWeek.year,
+      weekNumber: selectedWeek.week,
+      weekStart: weekDates.start,
+      weekEnd: weekDates.end,
+      isPublished,
+      days: weekMenu,
       contactInfo,
       vacation: vacationData
     };
@@ -264,8 +275,8 @@ export default function Admin() {
 
       // Zuerst den Speiseplan speichern (gleiche Logik wie handleSave)
       const menuData = {
-        weekStart: dateRange.start,
-        weekEnd: dateRange.end,
+        weekStart: weekDates.start,
+        weekEnd: weekDates.end,
         days: weekMenu,
         contactInfo: contactInfo,
         vacation: vacationData,
@@ -293,8 +304,8 @@ export default function Admin() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          weekStart: dateRange.start,
-          weekEnd: dateRange.end
+          weekStart: weekDates.start,
+          weekEnd: weekDates.end
         })
       });
 
@@ -391,10 +402,75 @@ export default function Admin() {
     fetchAvailableMenus();
   }, []); // Leere Dependency Array = nur beim ersten Render ausführen
 
+  // Funktion zum Generieren der Kalenderwochenoptionen
+  const getWeekOptions = () => {
+    const options = [];
+    const currentDate = new Date();
+    const { year: currentYear, week: currentWeek } = getWeekNumber(currentDate);
+    
+    // Berechne die nächsten 3 Wochen
+    for (let weekOffset = 0; weekOffset <= 3; weekOffset++) {
+      let year = currentYear;
+      let week = currentWeek + weekOffset;
+      
+      // Wenn die Woche über 52 geht, setze auf Woche 1 des nächsten Jahres
+      if (week > 52) {
+        year++;
+        week = week - 52;
+      }
+      
+      const dates = getWeekDates(year, week);
+      options.push({
+        year,
+        week,
+        label: `KW ${week} (${formatDate(dates.start)} - ${formatDate(dates.end)})`
+      });
+    }
+    
+    return options;
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-4xl mx-auto p-4">
         <h1 className="text-2xl font-bold mb-8">Menü-Verwaltung</h1>
+
+        {/* Wochenauswahl */}
+        <div className="bg-white p-6 rounded-lg shadow mb-6">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Kalenderwoche auswählen
+              </label>
+              <select
+                value={`${selectedWeek.year}-${selectedWeek.week}`}
+                onChange={(e) => {
+                  const [year, week] = e.target.value.split('-').map(Number);
+                  setSelectedWeek({ year, week });
+                }}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              >
+                {getWeekOptions().map((option) => (
+                  <option key={`${option.year}-${option.week}`} value={`${option.year}-${option.week}`}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="ml-4 flex items-center">
+              <label className="flex items-center gap-2 text-gray-700">
+                <input
+                  type="checkbox"
+                  checked={isPublished}
+                  onChange={(e) => setIsPublished(e.target.checked)}
+                  className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                />
+                <span>Veröffentlichen</span>
+              </label>
+            </div>
+          </div>
+        </div>
 
         {/* Urlaubs-Toggle als kleiner Button */}
         <div className="mb-4 flex items-center justify-end">
@@ -407,13 +483,13 @@ export default function Admin() {
             }`}
           >
             <span className="material-icons text-sm">
-              {vacationData.isOnVacation ? '' : ''}
+              {vacationData.isOnVacation ? '🌴' : ''}
             </span>
             Urlaubsmodus {vacationData.isOnVacation ? 'aktiv' : 'inaktiv'}
           </button>
         </div>
 
-        {/* Urlaubs-Einstellungen als Modal/Dialog */}
+        {/* Urlaubs-Einstellungen */}
         {vacationData.isOnVacation && (
           <div className="mb-6 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
             <div className="grid grid-cols-2 gap-4 mb-4">
@@ -451,7 +527,7 @@ export default function Admin() {
                   ...vacationData,
                   message: e.target.value
                 })}
-                placeholder="z.B.: Wir machen Betriebsferien"
+                placeholder="z.B.: Wir machen Betriebsferien 🌴"
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
               />
             </div>
@@ -504,34 +580,9 @@ export default function Admin() {
             </div>
           </div>
 
-          {/* Date Range */}
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h2 className="text-xl font-semibold mb-4 text-gray-900">Zeitraum</h2>
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Von</label>
-                <input
-                  type="date"
-                  value={dateRange.start}
-                  onChange={handleStartDateChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Bis</label>
-                <input
-                  type="date"
-                  value={dateRange.end}
-                  disabled
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-gray-50"
-                />
-              </div>
-            </div>
-          </div>
-
           {/* Menu Items */}
           {weekMenu.map((day, dayIndex) => {
-            const currentDate = new Date(dateRange.start);
+            const currentDate = new Date(weekDates.start);
             currentDate.setDate(currentDate.getDate() + dayIndex);
             const dateStr = currentDate.toISOString().split('T')[0];
             const holidayInfo = holidays[dateStr];
@@ -546,9 +597,9 @@ export default function Admin() {
                     <label className="flex items-center gap-2 text-gray-700 cursor-pointer">
                       <input
                         type="checkbox"
-                        checked={holidayInfo?.type === 'holiday' ? true : day.isClosed || false}
+                        checked={holidayInfo?.type === 'holiday' && holidayInfo?.isLegalHolidayInLowerSaxony ? true : day.isClosed || false}
                         onChange={(e) => handleClosedChange(dayIndex, e.target.checked)}
-                        disabled={holidayInfo?.type === 'holiday'}
+                        disabled={holidayInfo?.type === 'holiday' && holidayInfo?.isLegalHolidayInLowerSaxony}
                         className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
                       />
                       <span>Als Schließtag markieren</span>
@@ -558,7 +609,7 @@ export default function Admin() {
                   {/* Feiertags-Badge wenn vorhanden */}
                   {holidayInfo && (
                     <div className={`px-4 py-2 rounded-lg self-start ${
-                      holidayInfo.type === 'holiday' 
+                      holidayInfo.type === 'holiday' && holidayInfo.isLegalHolidayInLowerSaxony
                         ? 'bg-red-100 text-red-800' 
                         : `bg-${holidayInfo.color}-100 text-${holidayInfo.color}-800`
                     }`}>
@@ -567,9 +618,9 @@ export default function Admin() {
                   )}
 
                   {/* Mahlzeiten oder Geschlossen-Nachricht */}
-                  {(holidayInfo?.type === 'holiday' || (holidayInfo?.type === 'special' && holidayInfo?.forceClose)) ? (
+                  {(holidayInfo?.type === 'holiday' && holidayInfo?.isLegalHolidayInLowerSaxony) ? (
                     <div className="p-4 bg-gray-50 rounded text-gray-600 text-center">
-                      An Feiertagen bleibt die Kantine geschlossen
+                      An gesetzlichen Feiertagen bleibt die Kantine geschlossen
                     </div>
                   ) : day.isClosed ? (
                     <div className="p-4 bg-gray-50 rounded text-gray-600 text-center">

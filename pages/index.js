@@ -210,7 +210,7 @@ export default function Home() {
             {/* Feiertags-Badge */}
             {holidays[dateStr] && (
               <div className={`px-4 py-2 rounded-lg self-start ${
-                holidays[dateStr].type === 'holiday' 
+                holidays[dateStr].type === 'holiday' && holidays[dateStr].isLegalHolidayInLowerSaxony
                   ? 'bg-red-100 text-red-800' 
                   : `bg-${holidays[dateStr].color}-100 text-${holidays[dateStr].color}-800`
               }`}>
@@ -219,11 +219,11 @@ export default function Home() {
             )}
           </div>
 
-          {/* Geschlossen-Nachricht für Feiertage */}
-          {(holidays[dateStr]?.type === 'holiday' || 
-            (holidays[dateStr]?.type === 'special' && holidays[dateStr]?.forceClose)) ? (
+          {/* Geschlossen-Nachricht für gesetzliche Feiertage */}
+          {(holidays[dateStr]?.type === 'holiday' && 
+            holidays[dateStr]?.isLegalHolidayInLowerSaxony) ? (
             <div className="mt-4 p-4 bg-gray-50 rounded text-gray-600 text-center">
-              An Feiertagen bleibt die Kantine geschlossen
+              An gesetzlichen Feiertagen bleibt die Kantine geschlossen
             </div>
           ) : (
             <div className="mt-4 space-y-3">

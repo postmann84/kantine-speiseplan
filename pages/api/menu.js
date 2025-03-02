@@ -5,17 +5,15 @@ import Menu from '../../models/menu';
 export default async function handler(req, res) {
   await dbConnect();
 
-  // GET: Lade aktuellen Speiseplan
+  // GET: Lade aktuellen (veröffentlichten) Speiseplan
   if (req.method === 'GET') {
     try {
-      const menu = await Menu.findOne()
-        .sort({ createdAt: -1 })
-        .lean();
+      const menu = await Menu.findOne({ isPublished: true }).lean();
 
       if (!menu) {
         return res.status(200).json({
           success: false,
-          message: 'Noch kein Speiseplan verfügbar.'
+          message: 'Aktuell ist kein Speiseplan verfügbar.'
         });
       }
 
@@ -23,7 +21,6 @@ export default async function handler(req, res) {
         success: true,
         data: menu
       });
-
     } catch (error) {
       console.error('API Error:', error);
       return res.status(500).json({
@@ -33,14 +30,29 @@ export default async function handler(req, res) {
     }
   }
 
-  // POST: Speichere neuen Speiseplan
+  // POST: Speichere oder aktualisiere Speiseplan
   if (req.method === 'POST') {
     try {
       const menuData = req.body;
       
-      // Lösche alten Speiseplan und erstelle neuen
-      await Menu.deleteMany({});
-      const result = await Menu.create(menuData);
+      // Suche nach existierendem Menü für diese Woche
+      const existingMenu = await Menu.findOne({
+        year: menuData.year,
+        weekNumber: menuData.weekNumber
+      });
+
+      let result;
+      if (existingMenu) {
+        // Aktualisiere existierendes Menü
+        result = await Menu.findByIdAndUpdate(
+          existingMenu._id,
+          menuData,
+          { new: true }
+        );
+      } else {
+        // Erstelle neues Menü
+        result = await Menu.create(menuData);
+      }
 
       return res.status(200).json({
         success: true,
