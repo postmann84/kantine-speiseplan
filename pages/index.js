@@ -197,7 +197,7 @@ export default function Home() {
     const isCurrentDay = isToday(day.day);
 
     return (
-      <div key={index} className={`mb-6 rounded-lg shadow-md overflow-hidden
+      <div key={index} className={`mb-4 rounded-lg shadow-md overflow-hidden
         ${isCurrentDay ? 'ring-2 ring-blue-500' : ''}
         ${isVacationDay ? 'bg-yellow-50' : 'bg-white'}`}
       >
