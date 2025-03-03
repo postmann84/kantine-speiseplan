@@ -207,12 +207,12 @@ export default function Home() {
               {day.day} ({formatDate(dayDate)})
             </h2>
             
-            {/* Feiertags-Badge */}
+            {/* Feiertags-Badge - dezenteres Design */}
             {holidays[dateStr] && (
-              <div className={`px-4 py-2 rounded-lg self-start ${
+              <div className={`px-2 py-1 text-xs rounded-md self-start ${
                 holidays[dateStr].type === 'holiday' && holidays[dateStr].isLegalHolidayInLowerSaxony
-                  ? 'bg-red-100 text-red-800' 
-                  : `bg-${holidays[dateStr].color}-100 text-${holidays[dateStr].color}-800`
+                  ? 'bg-red-50 text-red-700 border border-red-200' 
+                  : `bg-${holidays[dateStr].color}-50 text-${holidays[dateStr].color}-700 border border-${holidays[dateStr].color}-200`
               }`}>
                 {holidays[dateStr].name}
               </div>
@@ -222,7 +222,7 @@ export default function Home() {
           {/* Geschlossen-Nachricht für gesetzliche Feiertage */}
           {(holidays[dateStr]?.type === 'holiday' && 
             holidays[dateStr]?.isLegalHolidayInLowerSaxony) ? (
-            <div className="mt-4 p-4 bg-gray-50 rounded text-gray-600 text-center">
+            <div className="mt-2 p-2 bg-gray-50 rounded text-gray-600 text-center text-sm">
               An gesetzlichen Feiertagen bleibt die Kantine geschlossen
             </div>
           ) : (
