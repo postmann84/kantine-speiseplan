@@ -6,9 +6,13 @@ import Login from '../components/Login';
 
 export default function Admin() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isClient, setIsClient] = useState(false);
   
-  // Überprüfe beim Laden, ob der Benutzer eingeloggt ist
+  // Setze isClient auf true, wenn die Komponente im Browser läuft
   useEffect(() => {
+    setIsClient(true);
+    
+    // Überprüfe beim Laden, ob der Benutzer eingeloggt ist
     const loggedInStatus = localStorage.getItem('isAdminLoggedIn');
     if (loggedInStatus === 'true') {
       setIsLoggedIn(true);
@@ -20,6 +24,13 @@ export default function Admin() {
     localStorage.removeItem('isAdminLoggedIn');
     setIsLoggedIn(false);
   };
+
+  // Wenn nicht client-side, zeige nichts an, um Hydration-Fehler zu vermeiden
+  if (!isClient) {
+    return <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <p>Lade...</p>
+    </div>;
+  }
 
   // Wenn nicht eingeloggt, zeige Login-Komponente
   if (!isLoggedIn) {

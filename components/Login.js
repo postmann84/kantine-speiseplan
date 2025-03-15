@@ -1,10 +1,16 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function Login({ onLoginSuccess }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+
+  // Setze isClient auf true, wenn die Komponente im Browser läuft
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   // Hartcodierte Anmeldedaten
   const ADMIN_USERNAME = 'postmann65@web.de';
@@ -17,8 +23,10 @@ export default function Login({ onLoginSuccess }) {
 
     // Einfache Überprüfung der Anmeldedaten
     if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
-      // Speichere den Login-Status im localStorage
-      localStorage.setItem('isAdminLoggedIn', 'true');
+      // Speichere den Login-Status im localStorage (nur auf Client-Seite)
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('isAdminLoggedIn', 'true');
+      }
       
       // Rufe die Callback-Funktion auf, um den übergeordneten Komponenten-Status zu aktualisieren
       if (onLoginSuccess) {
@@ -30,6 +38,13 @@ export default function Login({ onLoginSuccess }) {
     
     setLoading(false);
   };
+
+  // Wenn nicht client-side, zeige ein einfaches Lade-Element
+  if (!isClient) {
+    return <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <p>Lade...</p>
+    </div>;
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
