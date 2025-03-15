@@ -154,3 +154,7 @@ dist
 
 # vercel
 .vercel
+
+# Kontaktdaten
+*.csv
+!data/*.enc

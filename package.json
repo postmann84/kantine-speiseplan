@@ -2,6 +2,7 @@
   "name": "kantine-speiseplan",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -12,7 +13,9 @@
     "@sendgrid/mail": "^8.1.4",
     "bcryptjs": "^3.0.2",
     "cookie": "^1.0.2",
+    "csv-parse": "^5.6.0",
     "date-holidays": "^3.23.22",
+    "dotenv": "^16.4.7",
     "iron-session": "^8.0.4",
     "jose": "^6.0.6",
     "jsonwebtoken": "^9.0.2",
