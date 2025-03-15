@@ -1,37 +1,34 @@
 import { useState } from 'react';
-import { useRouter } from 'next/router';
 
-export default function Login() {
+export default function Login({ onLoginSuccess }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
+
+  // Hartcodierte Anmeldedaten
+  const ADMIN_USERNAME = 'postmann65@web.de';
+  const ADMIN_PASSWORD = 'Hagepatt12';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
-    try {
-      const res = await fetch('/api/auth', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
-      });
-
-      const data = await res.json();
-
-      if (data.success) {
-        router.reload();
-      } else {
-        setError(data.message || 'Anmeldung fehlgeschlagen');
+    // Einfache Überprüfung der Anmeldedaten
+    if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+      // Speichere den Login-Status im localStorage
+      localStorage.setItem('isAdminLoggedIn', 'true');
+      
+      // Rufe die Callback-Funktion auf, um den übergeordneten Komponenten-Status zu aktualisieren
+      if (onLoginSuccess) {
+        onLoginSuccess();
       }
-    } catch (err) {
-      setError('Ein Fehler ist aufgetreten');
-    } finally {
-      setLoading(false);
+    } else {
+      setError('Ungültige Anmeldedaten');
     }
+    
+    setLoading(false);
   };
 
   return (

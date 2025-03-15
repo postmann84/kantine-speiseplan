@@ -3,51 +3,27 @@ import { Save, Loader, AlertCircle } from 'lucide-react';
 import { getHolidaysForWeek } from '../lib/holidays';
 import { formatDate, getWeekNumber, getWeekDates } from '../lib/dateUtils';
 import Login from '../components/Login';
-import { getIronSession } from 'iron-session';
 
-// Session-Optionen
-const sessionOptions = {
-  password: process.env.SECRET_COOKIE_PASSWORD || 'complex_password_at_least_32_characters_long',
-  cookieName: 'admin-session',
-  cookieOptions: {
-    secure: process.env.NODE_ENV === 'production',
-    httpOnly: true,
-  },
-};
-
-// Server-side props mit Authentifizierungsprüfung
-export async function getServerSideProps({ req, res }) {
-  // Temporäre Änderung: Überspringen der Authentifizierungsprüfung
-  return {
-    props: {
-      isLoggedIn: true // Immer als eingeloggt betrachten
-    }
-  };
+export default function Admin() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   
-  // Original-Code (auskommentiert für späteren Gebrauch)
-  /* 
-  const session = await getIronSession(req, res, sessionOptions);
-
-  if (!session.isLoggedIn) {
-    return {
-      props: {
-        isLoggedIn: false
-      }
-    };
-  }
-
-  return {
-    props: {
-      isLoggedIn: true
+  // Überprüfe beim Laden, ob der Benutzer eingeloggt ist
+  useEffect(() => {
+    const loggedInStatus = localStorage.getItem('isAdminLoggedIn');
+    if (loggedInStatus === 'true') {
+      setIsLoggedIn(true);
     }
-  };
-  */
-}
+  }, []);
 
-export default function Admin({ isLoggedIn }) {
+  // Logout-Funktion
+  const handleLogout = () => {
+    localStorage.removeItem('isAdminLoggedIn');
+    setIsLoggedIn(false);
+  };
+
   // Wenn nicht eingeloggt, zeige Login-Komponente
   if (!isLoggedIn) {
-    return <Login />;
+    return <Login onLoginSuccess={() => setIsLoggedIn(true)} />;
   }
 
   const [loading, setLoading] = useState(false);
@@ -456,7 +432,15 @@ export default function Admin({ isLoggedIn }) {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-4xl mx-auto p-4">
-        <h1 className="text-2xl font-bold mb-8">Menü-Verwaltung</h1>
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-2xl font-bold">Menü-Verwaltung</h1>
+          <button
+            onClick={handleLogout}
+            className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded text-gray-700 text-sm"
+          >
+            Abmelden
+          </button>
+        </div>
 
         {/* Wochenauswahl */}
         <div className="bg-white p-6 rounded-lg shadow mb-6">
