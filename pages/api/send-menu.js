@@ -1,7 +1,7 @@
 import nodemailer from 'nodemailer';
 import QRCode from 'qrcode';
 import { getWeekDates } from '../../lib/dateUtils';
-import { loadAllContacts } from '../../lib/contacts';
+const { loadAllContacts } = require('../../lib/contacts');
 
 // Hilfsfunktion zum Formatieren des Datums
 const formatDateRange = (startDate, endDate) => {

@@ -1,5 +1,5 @@
-import fs from 'fs';
-import { parse } from 'csv-parse/sync';
+const fs = require('fs');
+const { parse } = require('csv-parse/sync');
 
 // Pfad zur CSV-Datei
 const csvFilePath = 'scripts/kollegen.csv';

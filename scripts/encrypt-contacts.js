@@ -1,8 +1,9 @@
 // Dieses Skript verschlüsselt CSV-Kontaktdaten und speichert sie im data-Verzeichnis
-import fs from 'fs';
-import path from 'path';
-import { encryptData } from '../lib/contacts.js';
-import dotenv from 'dotenv';
+const fs = require('fs');
+const path = require('path');
+const crypto = require('crypto');
+const { parse } = require('csv-parse/sync');
+const dotenv = require('dotenv');
 
 // Lade Umgebungsvariablen
 dotenv.config({ path: '.env.local' });
@@ -11,6 +12,26 @@ const ENCRYPTION_KEY = process.env.CONTACTS_ENCRYPTION_KEY;
 if (!ENCRYPTION_KEY) {
   console.error('Fehler: CONTACTS_ENCRYPTION_KEY nicht in .env.local gefunden');
   process.exit(1);
+}
+
+// Funktion zum Verschlüsseln von Daten
+function encryptData(data, key) {
+  // Generiere zufälligen Initialisierungsvektor
+  const iv = crypto.randomBytes(16);
+  
+  // Erstelle Cipher mit AES-256-CBC
+  const cipher = crypto.createCipheriv(
+    'aes-256-cbc', 
+    crypto.createHash('sha256').update(key).digest(), 
+    iv
+  );
+  
+  // Verschlüssele die Daten
+  let encrypted = cipher.update(data);
+  encrypted = Buffer.concat([encrypted, cipher.final()]);
+  
+  // Gib IV + verschlüsselte Daten zurück
+  return iv.toString('hex') + encrypted.toString('hex');
 }
 
 // Funktion zum Verschlüsseln einer CSV-Datei
@@ -50,7 +71,7 @@ async function main() {
   
   if (args.length < 2) {
     console.log('Verwendung: node scripts/encrypt-contacts.js <csv-datei> <gruppenname>');
-    console.log('Beispiel: node scripts/encrypt-contacts.js mittagskarte.csv mittagskarte');
+    console.log('Beispiel: node scripts/encrypt-contacts.js kollegen.csv kollegen');
     return;
   }
   
