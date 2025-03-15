@@ -422,10 +422,16 @@ export default function Admin({ isLoggedIn }) {
     const currentDate = new Date();
     const { year: currentYear, week: currentWeek } = getWeekNumber(currentDate);
     
-    // Berechne die nächsten 3 Wochen
-    for (let weekOffset = 0; weekOffset <= 3; weekOffset++) {
+    // Berechne die letzten 8 Wochen und die nächsten 4 Wochen
+    for (let weekOffset = -8; weekOffset <= 4; weekOffset++) {
       let year = currentYear;
       let week = currentWeek + weekOffset;
+      
+      // Wenn die Woche unter 1 geht, setze auf die letzten Wochen des Vorjahres
+      if (week < 1) {
+        year--;
+        week = 52 + week; // week ist negativ, daher addieren wir
+      }
       
       // Wenn die Woche über 52 geht, setze auf Woche 1 des nächsten Jahres
       if (week > 52) {
@@ -437,7 +443,10 @@ export default function Admin({ isLoggedIn }) {
       options.push({
         year,
         week,
-        label: `KW ${week} (${formatDate(dates.start)} - ${formatDate(dates.end)})`
+        label: `KW ${week} (${formatDate(dates.start)} - ${formatDate(dates.end)})`,
+        isPast: weekOffset < 0,
+        isCurrent: weekOffset === 0,
+        isFuture: weekOffset > 0
       });
     }
     
@@ -465,8 +474,11 @@ export default function Admin({ isLoggedIn }) {
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
               >
                 {getWeekOptions().map((option) => (
-                  <option key={`${option.year}-${option.week}`} value={`${option.year}-${option.week}`}>
-                    {option.label}
+                  <option 
+                    key={`${option.year}-${option.week}`} 
+                    value={`${option.year}-${option.week}`}
+                  >
+                    {option.isPast ? '◀ ' : option.isCurrent ? '▶ ' : '▶▶ '}{option.label}
                   </option>
                 ))}
               </select>
