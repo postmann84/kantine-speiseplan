@@ -2,41 +2,8 @@ import { useState, useEffect } from 'react';
 import { Save, Loader, AlertCircle } from 'lucide-react';
 import { getHolidaysForWeek } from '../lib/holidays';
 import { formatDate, getWeekNumber, getWeekDates } from '../lib/dateUtils';
-import Login from '../components/Login';
 
 export default function Admin() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [isClient, setIsClient] = useState(false);
-  
-  // Setze isClient auf true, wenn die Komponente im Browser läuft
-  useEffect(() => {
-    setIsClient(true);
-    
-    // Überprüfe beim Laden, ob der Benutzer eingeloggt ist
-    const loggedInStatus = localStorage.getItem('isAdminLoggedIn');
-    if (loggedInStatus === 'true') {
-      setIsLoggedIn(true);
-    }
-  }, []);
-
-  // Logout-Funktion
-  const handleLogout = () => {
-    localStorage.removeItem('isAdminLoggedIn');
-    setIsLoggedIn(false);
-  };
-
-  // Wenn nicht client-side, zeige nichts an, um Hydration-Fehler zu vermeiden
-  if (!isClient) {
-    return <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <p>Lade...</p>
-    </div>;
-  }
-
-  // Wenn nicht eingeloggt, zeige Login-Komponente
-  if (!isLoggedIn) {
-    return <Login onLoginSuccess={() => setIsLoggedIn(true)} />;
-  }
-
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
@@ -445,12 +412,6 @@ export default function Admin() {
       <div className="max-w-4xl mx-auto p-4">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-2xl font-bold">Menü-Verwaltung</h1>
-          <button
-            onClick={handleLogout}
-            className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded text-gray-700 text-sm"
-          >
-            Abmelden
-          </button>
         </div>
 
         {/* Wochenauswahl */}
