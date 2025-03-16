@@ -283,7 +283,12 @@ export default function Admin() {
       }
 
       const emailResult = await emailResponse.json();
-      setEmailStatus(`E-Mail wurde erfolgreich versendet! (Message ID: ${emailResult.messageId})`);
+      
+      if (emailResult.success) {
+        setEmailStatus(`${emailResult.message} (${emailResult.successCount}/${emailResult.totalRecipients} Empfänger)`);
+      } else {
+        setEmailStatus(`Teilweise erfolgreich: ${emailResult.message}`);
+      }
 
     } catch (error) {
       console.error('Fehler:', error);

@@ -25,6 +25,15 @@ function getWeek(date) {
   return 1 + Math.ceil((firstThursday - target) / 604800000);
 }
 
+// Hilfsfunktion zum Aufteilen eines Arrays in Batches
+function chunkArray(array, chunkSize) {
+  const chunks = [];
+  for (let i = 0; i < array.length; i += chunkSize) {
+    chunks.push(array.slice(i, i + chunkSize));
+  }
+  return chunks;
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -75,6 +84,11 @@ export default async function handler(req, res) {
     
     console.log(`${allContacts.length} Kontakte aus Umgebungsvariable geladen`);
 
+    // Kontakte in Batches von maximal 25 Empfängern aufteilen
+    const BATCH_SIZE = 25;
+    const contactBatches = chunkArray(allContacts, BATCH_SIZE);
+    console.log(`Kontakte in ${contactBatches.length} Batches aufgeteilt`);
+
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       port: process.env.SMTP_PORT,
@@ -110,37 +124,101 @@ export default async function handler(req, res) {
       </div>
     `;
 
-    // E-Mail-Konfiguration
-    const mailOptions = {
-      from: {
-        name: 'Betriebskantine',
-        address: process.env.EMAIL_USER
-      },
-      to: process.env.EMAIL_USER,
-      bcc: allContacts, // Verwende die Kontakte aus der Umgebungsvariable
-      subject: `Speiseplan ${dateRange}`,
-      html: emailHtml,
-      attachments: [{
-        filename: 'qrcode.png',
-        content: qrCodeBase64,
-        encoding: 'base64',
-        cid: 'qrcode',
-        contentType: 'image/png'
-      }]
-    };
+    // E-Mails in Batches versenden
+    const results = [];
+    let successCount = 0;
+    let failureCount = 0;
 
-    console.log('Sende E-Mail mit folgenden Details:');
-    console.log('Von:', process.env.EMAIL_USER);
-    console.log('Betreff:', `Speiseplan ${dateRange}`);
-    console.log('Anzahl BCC-Empfänger:', allContacts.length);
+    for (let i = 0; i < contactBatches.length; i++) {
+      const batch = contactBatches[i];
+      
+      try {
+        console.log(`Sende Batch ${i+1}/${contactBatches.length} mit ${batch.length} Empfängern...`);
+        
+        // E-Mail-Konfiguration für diesen Batch
+        const mailOptions = {
+          from: {
+            name: 'Betriebskantine',
+            address: process.env.EMAIL_USER
+          },
+          bcc: batch,
+          subject: `Speiseplan ${dateRange}`,
+          html: emailHtml,
+          attachments: [{
+            filename: 'qrcode.png',
+            content: qrCodeBase64,
+            encoding: 'base64',
+            cid: 'qrcode',
+            contentType: 'image/png'
+          }]
+        };
 
-    const info = await transporter.sendMail(mailOptions);
-    console.log('E-Mail erfolgreich versendet:', info.messageId);
+        const info = await transporter.sendMail(mailOptions);
+        console.log(`Batch ${i+1} erfolgreich versendet: ${info.messageId}`);
+        
+        results.push({
+          batch: i+1,
+          success: true,
+          messageId: info.messageId,
+          recipients: batch.length
+        });
+        
+        successCount += batch.length;
+        
+        // Kurze Pause zwischen den Batches, um den Server nicht zu überlasten
+        if (i < contactBatches.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      } catch (error) {
+        console.error(`Fehler beim Versenden von Batch ${i+1}:`, error);
+        
+        results.push({
+          batch: i+1,
+          success: false,
+          error: error.message,
+          recipients: batch.length
+        });
+        
+        failureCount += batch.length;
+      }
+    }
 
+    // Sende eine Bestätigungs-E-Mail an den Absender, wenn alle E-Mails erfolgreich versendet wurden
+    if (failureCount === 0) {
+      try {
+        const summaryMailOptions = {
+          from: {
+            name: 'Betriebskantine',
+            address: process.env.EMAIL_USER
+          },
+          to: process.env.EMAIL_USER,
+          subject: `Speiseplan ${dateRange} - Versandbestätigung`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #1a365d;">Versandbestätigung</h2>
+              <p>Der Speiseplan für die Woche vom ${dateRange} wurde erfolgreich an alle ${successCount} Empfänger versendet.</p>
+              <p>Versandzeitpunkt: ${new Date().toLocaleString('de-DE')}</p>
+            </div>
+          `
+        };
+
+        await transporter.sendMail(summaryMailOptions);
+        console.log('Bestätigungs-E-Mail an Absender versendet');
+      } catch (error) {
+        console.error('Fehler beim Versenden der Bestätigungs-E-Mail:', error);
+      }
+    }
+
+    // Rückgabe der Ergebnisse
     res.status(200).json({ 
-      success: true, 
-      message: 'E-Mail wurde erfolgreich versendet',
-      messageId: info.messageId
+      success: failureCount === 0,
+      message: failureCount === 0 
+        ? `E-Mail wurde erfolgreich an alle ${successCount} Empfänger versendet` 
+        : `E-Mail wurde an ${successCount} Empfänger versendet, ${failureCount} fehlgeschlagen`,
+      totalRecipients: allContacts.length,
+      successCount,
+      failureCount,
+      batches: results
     });
 
   } catch (error) {
