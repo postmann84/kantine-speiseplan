@@ -236,7 +236,7 @@ export default function Admin() {
     try {
       setIsSending(true);
       setEmailStatus('Speichere Speiseplan...');
-
+      
       // Zuerst den Speiseplan speichern
       const menuData = {
         year: selectedWeek.year,
@@ -256,13 +256,13 @@ export default function Admin() {
         },
         body: JSON.stringify(menuData)
       });
-
+      
       if (!saveResponse.ok) {
         throw new Error('Fehler beim Speichern des Speiseplans');
       }
-
+      
       setEmailStatus('Speiseplan gespeichert. Starte E-Mail-Versand...');
-
+      
       // E-Mail versenden mit dem gespeicherten Menü
       const emailResponse = await fetch('/api/send-menu', {
         method: 'POST',
@@ -271,13 +271,11 @@ export default function Admin() {
         },
         body: JSON.stringify({
           menu: menuData,
-          weekStart: weekDates.start,
-          weekEnd: weekDates.end,
           weekNumber: selectedWeek.week,
           year: selectedWeek.year
         })
       });
-
+      
       // Verbesserte Fehlerbehandlung
       if (!emailResponse.ok) {
         const contentType = emailResponse.headers.get('content-type');
@@ -296,14 +294,7 @@ export default function Admin() {
       const contentType = emailResponse.headers.get('content-type');
       if (contentType && contentType.includes('application/json')) {
         const emailResult = await emailResponse.json();
-        
-        if (emailResult.batchCount) {
-          // Wenn Batches verwendet werden, zeige eine entsprechende Meldung an
-          setEmailStatus(`E-Mail-Versand an alle Kontakte gestartet! Die E-Mails werden in ${emailResult.batchCount} Gruppen versendet. Sie erhalten eine Bestätigung per E-Mail, wenn der Versand abgeschlossen ist.`);
-        } else {
-          // Standardmeldung für einzelne E-Mails
-          setEmailStatus(`E-Mail wurde erfolgreich versendet! ${emailResult.message || ''}`);
-        }
+        setEmailStatus(`E-Mail wurde erfolgreich versendet! ${emailResult.message || ''}`);
       } else {
         setEmailStatus('E-Mail wurde erfolgreich versendet!');
       }

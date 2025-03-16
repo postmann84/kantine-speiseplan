@@ -1,7 +1,6 @@
 import nodemailer from 'nodemailer';
 import QRCode from 'qrcode';
 import { getWeekDates } from '../../lib/dateUtils';
-const { loadAllContacts } = require('../../lib/contacts');
 
 // Hilfsfunktion zum Formatieren des Datums
 const formatDateRange = (startDate, endDate) => {
@@ -66,7 +65,7 @@ export default async function handler(req, res) {
       });
     }
 
-    const { menu, recipient, weekStart, weekEnd, weekNumber, year } = req.body;
+    const { menu, recipient, weekNumber, year } = req.body;
     
     // Überprüfe, ob die erforderlichen Daten vorhanden sind
     if (!menu) {
@@ -76,20 +75,12 @@ export default async function handler(req, res) {
       });
     }
 
-    // Wochendaten entweder aus weekNumber und year berechnen oder aus den übergebenen Daten verwenden
+    // Wochendaten aus weekNumber und year berechnen
     let actualWeekDates;
     try {
       if (weekNumber && year) {
-        // Nutze die Funktion aus dateUtils.js um Montag und Freitag für die ausgewählte Woche zu berechnen
         actualWeekDates = getWeekDates(year, weekNumber);
-      } else if (weekStart && weekEnd) {
-        // Fallback: Verwende das alte Verfahren
-        actualWeekDates = {
-          start: new Date(weekStart),
-          end: new Date(weekEnd)
-        };
       } else if (menu.weekStart && menu.weekEnd) {
-        // Fallback: Verwende Daten aus dem Menü
         actualWeekDates = {
           start: new Date(menu.weekStart),
           end: new Date(menu.weekEnd)
@@ -154,20 +145,23 @@ export default async function handler(req, res) {
       </div>
     `;
 
+    // Einfache Konfiguration für nodemailer mit erhöhten Timeouts
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: parseInt(process.env.SMTP_PORT),
+      secure: true,
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASSWORD,
+      },
+      connectionTimeout: 10000, // 10 Sekunden Timeout für die Verbindung
+      greetingTimeout: 5000,    // 5 Sekunden Timeout für die Begrüßung
+      socketTimeout: 10000      // 10 Sekunden Timeout für Socket-Operationen
+    });
+
     // Wenn ein einzelner Empfänger angegeben wurde, sende nur an diesen
     if (recipient) {
       console.log(`Sende E-Mail an einzelnen Empfänger: ${recipient}`);
-      
-      // Einfache Konfiguration für nodemailer
-      const transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST,
-        port: parseInt(process.env.SMTP_PORT),
-        secure: true,
-        auth: {
-          user: process.env.EMAIL_USER,
-          pass: process.env.EMAIL_PASSWORD,
-        }
-      });
       
       const mailOptions = {
         from: {
@@ -204,43 +198,20 @@ export default async function handler(req, res) {
         });
       }
     } else {
-      // Lade alle Kontakte
-      console.log('Lade Kontakte...');
-      let allContacts = [];
-      try {
-        // Lade Kontakte aus der Datei oder Fallback aus Umgebungsvariablen
-        allContacts = await loadAllContacts();
-        console.log(`${allContacts.length} Kontakte geladen`);
-        
-        if (allContacts.length === 0) {
-          console.warn('Keine Kontakte gefunden. E-Mail wird nur an den Absender gesendet.');
-          allContacts = [process.env.EMAIL_USER];
-        }
-      } catch (contactsError) {
-        console.error('Fehler beim Laden der Kontakte:', contactsError);
-        // Fallback: Sende nur an den Absender
-        allContacts = [process.env.EMAIL_USER];
-      }
-
-      // Einfache Konfiguration für nodemailer
-      const transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST,
-        port: parseInt(process.env.SMTP_PORT),
-        secure: true,
-        auth: {
-          user: process.env.EMAIL_USER,
-          pass: process.env.EMAIL_PASSWORD,
-        }
-      });
-
-      // Sende E-Mail an den Absender mit allen Kontakten im BCC
+      // Verwende die Kontaktliste direkt aus der Umgebungsvariable
+      const contactList = process.env.EMAIL_LIST_KOLLEGEN || '';
+      const contacts = contactList.split(',').map(email => email.trim()).filter(email => email);
+      
+      console.log(`Sende E-Mail an ${contacts.length} Empfänger...`);
+      
+      // Sende E-Mail an alle Kontakte im BCC
       const mailOptions = {
         from: {
           name: 'Betriebskantine',
           address: process.env.EMAIL_USER
         },
         to: process.env.EMAIL_USER,
-        bcc: allContacts,
+        bcc: contacts,
         subject: `Speiseplan ${dateRange}`,
         html: emailHtml,
         attachments: qrCodeBase64 ? [{
@@ -253,127 +224,21 @@ export default async function handler(req, res) {
       };
 
       try {
-        console.log(`Sende E-Mail an ${allContacts.length} Empfänger...`);
         const info = await transporter.sendMail(mailOptions);
         console.log('E-Mail erfolgreich versendet:', info.messageId);
         
         return res.status(200).json({ 
           success: true, 
-          message: `E-Mail wurde erfolgreich an ${allContacts.length} Empfänger versendet`,
+          message: `E-Mail wurde erfolgreich an ${contacts.length} Empfänger versendet`,
           messageId: info.messageId
         });
       } catch (sendError) {
         console.error('Fehler beim Senden der E-Mail:', sendError);
-        
-        // Wenn der Massenversand fehlschlägt, versuche es mit Einzelversand
-        console.log('Massenversand fehlgeschlagen, versuche Einzelversand...');
-        
-        // Sende zuerst eine Benachrichtigung an den Absender
-        try {
-          const notificationOptions = {
-            from: {
-              name: 'Betriebskantine',
-              address: process.env.EMAIL_USER
-            },
-            to: process.env.EMAIL_USER,
-            subject: `Speiseplan ${dateRange} - Wechsel zu Einzelversand`,
-            html: `
-              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                <h2 style="color: #1a365d;">Massenversand fehlgeschlagen</h2>
-                <p>Der Versand des Speiseplans für die Woche vom ${dateRange} als Massenversand ist fehlgeschlagen.</p>
-                <p>Es wird nun versucht, die E-Mails einzeln zu versenden. Dies kann länger dauern.</p>
-                <p>Fehler: ${sendError.message}</p>
-              </div>
-            `
-          };
-          
-          await transporter.sendMail(notificationOptions);
-          console.log('Benachrichtigung über Wechsel zu Einzelversand gesendet');
-        } catch (notificationError) {
-          console.error('Fehler beim Senden der Benachrichtigung:', notificationError);
-        }
-        
-        // Versuche den Einzelversand
-        let successCount = 0;
-        let errorCount = 0;
-        
-        for (let i = 0; i < allContacts.length; i++) {
-          const recipient = allContacts[i];
-          console.log(`Sende E-Mail an einzelnen Empfänger (${i+1}/${allContacts.length}): ${recipient}`);
-          
-          const singleMailOptions = {
-            from: {
-              name: 'Betriebskantine',
-              address: process.env.EMAIL_USER
-            },
-            to: recipient,
-            subject: `Speiseplan ${dateRange}`,
-            html: emailHtml,
-            attachments: qrCodeBase64 ? [{
-              filename: 'qrcode.png',
-              content: qrCodeBase64,
-              encoding: 'base64',
-              cid: 'qrcode',
-              contentType: 'image/png'
-            }] : []
-          };
-          
-          try {
-            await transporter.sendMail(singleMailOptions);
-            console.log(`E-Mail an ${recipient} erfolgreich versendet`);
-            successCount++;
-          } catch (singleSendError) {
-            console.error(`Fehler beim Senden der E-Mail an ${recipient}:`, singleSendError);
-            errorCount++;
-          }
-          
-          // Kurze Pause zwischen den einzelnen E-Mails
-          if (i < allContacts.length - 1) {
-            await new Promise(resolve => setTimeout(resolve, 1000));
-          }
-        }
-        
-        // Sende eine Zusammenfassung an den Absender
-        try {
-          const summaryOptions = {
-            from: {
-              name: 'Betriebskantine',
-              address: process.env.EMAIL_USER
-            },
-            to: process.env.EMAIL_USER,
-            subject: `Speiseplan ${dateRange} - Einzelversand abgeschlossen`,
-            html: `
-              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                <h2 style="color: #1a365d;">Einzelversand abgeschlossen</h2>
-                <p>Der Einzelversand des Speiseplans für die Woche vom ${dateRange} wurde abgeschlossen.</p>
-                <p>Erfolgreich: ${successCount} Empfänger</p>
-                <p>Fehler: ${errorCount} Empfänger</p>
-                <p>Gesamtzahl: ${allContacts.length} Empfänger</p>
-              </div>
-            `
-          };
-          
-          await transporter.sendMail(summaryOptions);
-          console.log('Zusammenfassung an Absender gesendet');
-        } catch (summaryError) {
-          console.error('Fehler beim Senden der Zusammenfassung:', summaryError);
-        }
-        
-        if (successCount > 0) {
-          return res.status(200).json({
-            success: true,
-            message: `E-Mail wurde an ${successCount} von ${allContacts.length} Empfängern versendet`,
-            partialSuccess: true,
-            successCount,
-            errorCount
-          });
-        } else {
-          return res.status(500).json({
-            success: false,
-            message: 'E-Mail-Versand fehlgeschlagen',
-            error: sendError.message
-          });
-        }
+        return res.status(500).json({
+          success: false,
+          message: 'Fehler beim Senden der E-Mail',
+          error: sendError.message
+        });
       }
     }
   } catch (error) {
@@ -384,8 +249,7 @@ export default async function handler(req, res) {
       return res.status(500).json({ 
         success: false,
         message: 'Fehler beim E-Mail-Versand',
-        error: error.message,
-        details: error.stack
+        error: error.message
       });
     }
   }
