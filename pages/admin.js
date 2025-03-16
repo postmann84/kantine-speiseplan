@@ -237,7 +237,7 @@ export default function Admin() {
       setIsSending(true);
       setEmailStatus('Speichere Speiseplan...');
 
-      // Zuerst den Speiseplan speichern (gleiche Logik wie handleSave)
+      // Zuerst den Speiseplan speichern
       const menuData = {
         year: selectedWeek.year,
         weekNumber: selectedWeek.week,
@@ -263,7 +263,7 @@ export default function Admin() {
 
       setEmailStatus('Speiseplan gespeichert. Starte E-Mail-Versand...');
 
-      // Dann E-Mail versenden - übergebe jetzt auch die Wochennummer und das Jahr
+      // Dann E-Mail versenden
       const emailResponse = await fetch('/api/send-menu', {
         method: 'POST',
         headers: {
@@ -277,13 +277,28 @@ export default function Admin() {
         })
       });
 
+      // Verbesserte Fehlerbehandlung
       if (!emailResponse.ok) {
-        const errorData = await emailResponse.json();
-        throw new Error(errorData.message || 'E-Mail-Versand fehlgeschlagen');
+        const contentType = emailResponse.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          // Wenn die Antwort JSON ist, versuche sie zu parsen
+          const errorData = await emailResponse.json();
+          throw new Error(errorData.message || 'E-Mail-Versand fehlgeschlagen');
+        } else {
+          // Wenn die Antwort kein JSON ist, verwende den Statustext
+          const errorText = await emailResponse.text();
+          throw new Error(`E-Mail-Versand fehlgeschlagen: ${errorText || emailResponse.statusText}`);
+        }
       }
 
-      const emailResult = await emailResponse.json();
-      setEmailStatus(`E-Mail wurde erfolgreich versendet! (Message ID: ${emailResult.messageId})`);
+      // Erfolgreiche Antwort verarbeiten
+      const contentType = emailResponse.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        const emailResult = await emailResponse.json();
+        setEmailStatus(`E-Mail wurde erfolgreich versendet! (Message ID: ${emailResult.messageId || 'unbekannt'})`);
+      } else {
+        setEmailStatus('E-Mail wurde erfolgreich versendet!');
+      }
 
     } catch (error) {
       console.error('Fehler:', error);
