@@ -294,7 +294,14 @@ export default function Admin() {
       const contentType = emailResponse.headers.get('content-type');
       if (contentType && contentType.includes('application/json')) {
         const emailResult = await emailResponse.json();
-        setEmailStatus(`E-Mail wurde erfolgreich versendet! ${emailResult.message || ''}`);
+        
+        if (emailResult.batchCount) {
+          // Wenn Batches verwendet werden, zeige eine entsprechende Meldung an
+          setEmailStatus(`E-Mail-Versand an alle Kontakte gestartet! Die E-Mails werden in ${emailResult.batchCount} Gruppen versendet. Sie erhalten eine Bestätigung per E-Mail, wenn der Versand abgeschlossen ist.`);
+        } else {
+          // Standardmeldung für einzelne E-Mails
+          setEmailStatus(`E-Mail wurde erfolgreich versendet! ${emailResult.message || ''}`);
+        }
       } else {
         setEmailStatus('E-Mail wurde erfolgreich versendet!');
       }

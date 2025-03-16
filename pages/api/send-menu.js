@@ -26,7 +26,7 @@ function getWeek(date) {
 }
 
 // Maximale Anzahl von Empfängern pro E-Mail-Batch
-const BATCH_SIZE = 20;
+const BATCH_SIZE = 10;
 
 // Hilfsfunktion zum Aufteilen der Empfängerliste in Gruppen
 function chunkArray(array, chunkSize) {
@@ -36,6 +36,9 @@ function chunkArray(array, chunkSize) {
   }
   return chunks;
 }
+
+// Hilfsfunktion zum Warten
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -145,23 +148,23 @@ export default async function handler(req, res) {
       </div>
     `;
 
-    // Einfache Konfiguration für nodemailer mit erhöhten Timeouts
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: parseInt(process.env.SMTP_PORT),
-      secure: true,
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASSWORD,
-      },
-      connectionTimeout: 10000, // 10 Sekunden Timeout für die Verbindung
-      greetingTimeout: 5000,    // 5 Sekunden Timeout für die Begrüßung
-      socketTimeout: 10000      // 10 Sekunden Timeout für Socket-Operationen
-    });
-
     // Wenn ein einzelner Empfänger angegeben wurde, sende nur an diesen
     if (recipient) {
       console.log(`Sende E-Mail an einzelnen Empfänger: ${recipient}`);
+      
+      // Einfache Konfiguration für nodemailer mit erhöhten Timeouts
+      const transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port: parseInt(process.env.SMTP_PORT),
+        secure: true,
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASSWORD,
+        },
+        connectionTimeout: 10000, // 10 Sekunden Timeout für die Verbindung
+        greetingTimeout: 5000,    // 5 Sekunden Timeout für die Begrüßung
+        socketTimeout: 10000      // 10 Sekunden Timeout für Socket-Operationen
+      });
       
       const mailOptions = {
         from: {
@@ -200,46 +203,130 @@ export default async function handler(req, res) {
     } else {
       // Verwende die Kontaktliste direkt aus der Umgebungsvariable
       const contactList = process.env.EMAIL_LIST_KOLLEGEN || '';
-      const contacts = contactList.split(',').map(email => email.trim()).filter(email => email);
+      const allContacts = contactList.split(',').map(email => email.trim()).filter(email => email);
+      
+      // Begrenze die Anzahl der Kontakte für Vercel (um Timeouts zu vermeiden)
+      // In der Vercel-Umgebung senden wir nur an die ersten 50 Kontakte
+      const isVercel = process.env.VERCEL === '1';
+      const contacts = isVercel ? allContacts.slice(0, 50) : allContacts;
       
       console.log(`Sende E-Mail an ${contacts.length} Empfänger...`);
       
-      // Sende E-Mail an alle Kontakte im BCC
-      const mailOptions = {
-        from: {
-          name: 'Betriebskantine',
-          address: process.env.EMAIL_USER
+      // Teile die Kontakte in Batches auf
+      const batches = chunkArray(contacts, BATCH_SIZE);
+      console.log(`Aufgeteilt in ${batches.length} Batches mit je maximal ${BATCH_SIZE} Empfängern`);
+      
+      // Sende eine Bestätigung an den Client, dass der Versand gestartet wurde
+      res.status(200).json({ 
+        success: true, 
+        message: `E-Mail-Versand an ${contacts.length} Empfänger gestartet`,
+        batchCount: batches.length
+      });
+      
+      // Einfache Konfiguration für nodemailer mit erhöhten Timeouts
+      const transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port: parseInt(process.env.SMTP_PORT),
+        secure: true,
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASSWORD,
         },
-        to: process.env.EMAIL_USER,
-        bcc: contacts,
-        subject: `Speiseplan ${dateRange}`,
-        html: emailHtml,
-        attachments: qrCodeBase64 ? [{
-          filename: 'qrcode.png',
-          content: qrCodeBase64,
-          encoding: 'base64',
-          cid: 'qrcode',
-          contentType: 'image/png'
-        }] : []
-      };
-
-      try {
-        const info = await transporter.sendMail(mailOptions);
-        console.log('E-Mail erfolgreich versendet:', info.messageId);
+        connectionTimeout: 10000, // 10 Sekunden Timeout für die Verbindung
+        greetingTimeout: 5000,    // 5 Sekunden Timeout für die Begrüßung
+        socketTimeout: 10000      // 10 Sekunden Timeout für Socket-Operationen
+      });
+      
+      // Sende E-Mails in Batches
+      let successCount = 0;
+      let errorCount = 0;
+      
+      for (let i = 0; i < batches.length; i++) {
+        const batch = batches[i];
+        console.log(`Sende Batch ${i+1}/${batches.length} mit ${batch.length} Empfängern...`);
         
-        return res.status(200).json({ 
-          success: true, 
-          message: `E-Mail wurde erfolgreich an ${contacts.length} Empfänger versendet`,
-          messageId: info.messageId
-        });
-      } catch (sendError) {
-        console.error('Fehler beim Senden der E-Mail:', sendError);
-        return res.status(500).json({
-          success: false,
-          message: 'Fehler beim Senden der E-Mail',
-          error: sendError.message
-        });
+        try {
+          // Für jeden Batch eine neue Verbindung öffnen
+          const batchTransporter = nodemailer.createTransport({
+            host: process.env.SMTP_HOST,
+            port: parseInt(process.env.SMTP_PORT),
+            secure: true,
+            auth: {
+              user: process.env.EMAIL_USER,
+              pass: process.env.EMAIL_PASSWORD,
+            },
+            connectionTimeout: 10000,
+            greetingTimeout: 5000,
+            socketTimeout: 10000
+          });
+          
+          const mailOptions = {
+            from: {
+              name: 'Betriebskantine',
+              address: process.env.EMAIL_USER
+            },
+            to: process.env.EMAIL_USER,
+            bcc: batch,
+            subject: `Speiseplan ${dateRange}`,
+            html: emailHtml,
+            attachments: qrCodeBase64 ? [{
+              filename: 'qrcode.png',
+              content: qrCodeBase64,
+              encoding: 'base64',
+              cid: 'qrcode',
+              contentType: 'image/png'
+            }] : []
+          };
+          
+          const info = await batchTransporter.sendMail(mailOptions);
+          console.log(`Batch ${i+1}/${batches.length} erfolgreich versendet:`, info.messageId);
+          successCount += batch.length;
+          
+          // Warte 2 Sekunden zwischen den Batches, um den Server nicht zu überlasten
+          if (i < batches.length - 1) {
+            await sleep(2000);
+          }
+          
+          // Schließe die Verbindung
+          batchTransporter.close();
+        } catch (batchError) {
+          console.error(`Fehler beim Senden von Batch ${i+1}/${batches.length}:`, batchError);
+          errorCount += batch.length;
+          
+          // Bei Fehler: Warte 5 Sekunden vor dem nächsten Versuch
+          if (i < batches.length - 1) {
+            await sleep(5000);
+          }
+        }
       }
+      
+      // Sende eine Zusammenfassung an den Absender
+      try {
+        const summaryOptions = {
+          from: {
+            name: 'Betriebskantine',
+            address: process.env.EMAIL_USER
+          },
+          to: process.env.EMAIL_USER,
+          subject: `Speiseplan ${dateRange} - Versand abgeschlossen`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #1a365d;">E-Mail-Versand abgeschlossen</h2>
+              <p>Der Versand des Speiseplans für die Woche vom ${dateRange} wurde abgeschlossen.</p>
+              <p>Erfolgreich: ${successCount} Empfänger</p>
+              <p>Fehler: ${errorCount} Empfänger</p>
+              <p>Gesamtzahl: ${contacts.length} Empfänger</p>
+            </div>
+          `
+        };
+        
+        await transporter.sendMail(summaryOptions);
+        console.log('Zusammenfassung an Absender gesendet');
+      } catch (summaryError) {
+        console.error('Fehler beim Senden der Zusammenfassung:', summaryError);
+      }
+      
+      console.log(`E-Mail-Versand abgeschlossen. Erfolg: ${successCount}, Fehler: ${errorCount}`);
     }
   } catch (error) {
     console.error('Detaillierte Fehlerinformation:', error);
