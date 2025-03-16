@@ -276,7 +276,7 @@ export default function Admin() {
   // Neue Funktion zum rekursiven Versenden von E-Mail-Batches
   const sendEmailBatches = async (startBatchIndex, totalSent) => {
     try {
-      setEmailStatus(`Versende Batches ${startBatchIndex + 1}-${startBatchIndex + 2}... (${totalSent} Empfänger bisher)`);
+      setEmailStatus(`Versende Batch ${startBatchIndex + 1}... (${totalSent} Empfänger bisher)`);
       
       const emailResponse = await fetch('/api/send-menu', {
         method: 'POST',
@@ -306,10 +306,10 @@ export default function Admin() {
         setIsSending(false);
       } else {
         // Es gibt noch weitere Batches zu versenden
-        setEmailStatus(`${result.message}`);
+        setEmailStatus(`Batch ${startBatchIndex + 1} erfolgreich versendet: ${result.batches[0]?.messageId || 'OK'}. Warte vor dem nächsten Batch...`);
         
-        // Kurze Pause, um Vercel Zeit zum Atmen zu geben
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Längere Pause, um Vercel Zeit zum Atmen zu geben
+        await new Promise(resolve => setTimeout(resolve, 2000));
         
         // Nächsten Batch versenden
         await sendEmailBatches(result.nextBatchIndex, result.totalSent);

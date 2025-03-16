@@ -90,7 +90,7 @@ export default async function handler(req, res) {
     console.log(`Kontakte in ${contactBatches.length} Batches aufgeteilt`);
 
     // Maximale Anzahl von Batches, die in einer Anfrage versendet werden können
-    const MAX_BATCHES_PER_REQUEST = 2;
+    const MAX_BATCHES_PER_REQUEST = 1;
     
     // Berechne den Endindex für diese Anfrage
     const endBatchIndex = Math.min(startBatchIndex + MAX_BATCHES_PER_REQUEST, contactBatches.length);
