@@ -1,7 +1,6 @@
 import nodemailer from 'nodemailer';
 import QRCode from 'qrcode';
 import { getWeekDates } from '../../lib/dateUtils';
-const { loadAllContacts } = require('../../lib/contacts');
 
 // Hilfsfunktion zum Formatieren des Datums
 const formatDateRange = (startDate, endDate) => {
@@ -70,10 +69,11 @@ export default async function handler(req, res) {
 
     console.log('Verwende Datumszeitraum:', dateRange);
 
-    // Lade alle Kontakte aus den verschlüsselten Dateien
-    console.log('Lade Kontakte aus verschlüsselten Dateien...');
-    const allContacts = await loadAllContacts();
-    console.log(`${allContacts.length} Kontakte geladen`);
+    // Kontakte aus der Umgebungsvariable laden
+    const emailListString = process.env.EMAIL_LIST_KOLLEGEN || '';
+    const allContacts = emailListString.split(',').map(email => email.trim()).filter(email => email);
+    
+    console.log(`${allContacts.length} Kontakte aus Umgebungsvariable geladen`);
 
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
@@ -117,7 +117,7 @@ export default async function handler(req, res) {
         address: process.env.EMAIL_USER
       },
       to: process.env.EMAIL_USER,
-      bcc: allContacts, // Verwende alle geladenen Kontakte als BCC
+      bcc: allContacts, // Verwende die Kontakte aus der Umgebungsvariable
       subject: `Speiseplan ${dateRange}`,
       html: emailHtml,
       attachments: [{
