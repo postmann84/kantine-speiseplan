@@ -42,16 +42,16 @@ export default async function handler(req, res) {
   try {
     console.log('Starting email send process...');
     
-    // Debug-Logging für SMTP-Konfiguration
-    console.log('SMTP Config:', {
-      host: process.env.SMTP_HOST || 'nicht gesetzt',
-      port: process.env.SMTP_PORT || 'nicht gesetzt',
-      user: process.env.EMAIL_USER ? '✓ vorhanden' : '✗ fehlt',
-      pass: process.env.EMAIL_PASSWORD ? '✓ vorhanden' : '✗ fehlt',
-      websiteUrl: process.env.NEXT_PUBLIC_WEBSITE_URL || 'nicht gesetzt'
-    });
+    // Extrahiere Parameter aus der Anfrage
+    const { 
+      weekStart, 
+      weekEnd, 
+      weekNumber, 
+      year, 
+      startBatchIndex = 0, // Standardmäßig beginnen wir mit dem ersten Batch
+      totalSent = 0        // Standardmäßig wurden noch keine E-Mails versendet
+    } = req.body;
 
-    const { weekStart, weekEnd, weekNumber, year } = req.body;
     if (!weekNumber || !year) {
       // Fallback auf alte Implementierung, wenn weekNumber und year fehlen
       if (!weekStart || !weekEnd) {
@@ -88,6 +88,57 @@ export default async function handler(req, res) {
     const BATCH_SIZE = 25;
     const contactBatches = chunkArray(allContacts, BATCH_SIZE);
     console.log(`Kontakte in ${contactBatches.length} Batches aufgeteilt`);
+
+    // Maximale Anzahl von Batches, die in einer Anfrage versendet werden können
+    const MAX_BATCHES_PER_REQUEST = 2;
+    
+    // Berechne den Endindex für diese Anfrage
+    const endBatchIndex = Math.min(startBatchIndex + MAX_BATCHES_PER_REQUEST, contactBatches.length);
+    
+    // Prüfe, ob es noch Batches zu versenden gibt
+    if (startBatchIndex >= contactBatches.length) {
+      // Alle Batches wurden bereits versendet, sende eine Bestätigungs-E-Mail
+      try {
+        const transporter = nodemailer.createTransport({
+          host: process.env.SMTP_HOST,
+          port: process.env.SMTP_PORT,
+          secure: true,
+          auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASSWORD,
+          }
+        });
+        
+        const summaryMailOptions = {
+          from: {
+            name: 'Betriebskantine',
+            address: process.env.EMAIL_USER
+          },
+          to: process.env.EMAIL_USER,
+          subject: `Speiseplan ${dateRange} - Versandbestätigung`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #1a365d;">Versandbestätigung</h2>
+              <p>Der Speiseplan für die Woche vom ${dateRange} wurde erfolgreich an alle ${totalSent} Empfänger versendet.</p>
+              <p>Versandzeitpunkt: ${new Date().toLocaleString('de-DE')}</p>
+            </div>
+          `
+        };
+
+        await transporter.sendMail(summaryMailOptions);
+        console.log('Bestätigungs-E-Mail an Absender versendet');
+      } catch (error) {
+        console.error('Fehler beim Versenden der Bestätigungs-E-Mail:', error);
+      }
+      
+      return res.status(200).json({
+        success: true,
+        completed: true,
+        message: `E-Mail wurde erfolgreich an alle ${totalSent} Empfänger versendet`,
+        totalRecipients: allContacts.length,
+        totalSent
+      });
+    }
 
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
@@ -126,10 +177,11 @@ export default async function handler(req, res) {
 
     // E-Mails in Batches versenden
     const results = [];
-    let successCount = 0;
-    let failureCount = 0;
+    let batchSuccessCount = 0;
+    let batchFailureCount = 0;
 
-    for (let i = 0; i < contactBatches.length; i++) {
+    // Versende nur die Batches im aktuellen Bereich
+    for (let i = startBatchIndex; i < endBatchIndex; i++) {
       const batch = contactBatches[i];
       
       try {
@@ -163,11 +215,11 @@ export default async function handler(req, res) {
           recipients: batch.length
         });
         
-        successCount += batch.length;
+        batchSuccessCount += batch.length;
         
         // Kurze Pause zwischen den Batches, um den Server nicht zu überlasten
-        if (i < contactBatches.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 1000));
+        if (i < endBatchIndex - 1) {
+          await new Promise(resolve => setTimeout(resolve, 500));
         }
       } catch (error) {
         console.error(`Fehler beim Versenden von Batch ${i+1}:`, error);
@@ -179,45 +231,28 @@ export default async function handler(req, res) {
           recipients: batch.length
         });
         
-        failureCount += batch.length;
+        batchFailureCount += batch.length;
       }
     }
 
-    // Sende eine Bestätigungs-E-Mail an den Absender, wenn alle E-Mails erfolgreich versendet wurden
-    if (failureCount === 0) {
-      try {
-        const summaryMailOptions = {
-          from: {
-            name: 'Betriebskantine',
-            address: process.env.EMAIL_USER
-          },
-          to: process.env.EMAIL_USER,
-          subject: `Speiseplan ${dateRange} - Versandbestätigung`,
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <h2 style="color: #1a365d;">Versandbestätigung</h2>
-              <p>Der Speiseplan für die Woche vom ${dateRange} wurde erfolgreich an alle ${successCount} Empfänger versendet.</p>
-              <p>Versandzeitpunkt: ${new Date().toLocaleString('de-DE')}</p>
-            </div>
-          `
-        };
-
-        await transporter.sendMail(summaryMailOptions);
-        console.log('Bestätigungs-E-Mail an Absender versendet');
-      } catch (error) {
-        console.error('Fehler beim Versenden der Bestätigungs-E-Mail:', error);
-      }
-    }
-
+    // Berechne die Gesamtzahl der gesendeten E-Mails
+    const newTotalSent = totalSent + batchSuccessCount;
+    
+    // Prüfe, ob alle Batches versendet wurden
+    const isCompleted = endBatchIndex >= contactBatches.length;
+    
     // Rückgabe der Ergebnisse
     res.status(200).json({ 
-      success: failureCount === 0,
-      message: failureCount === 0 
-        ? `E-Mail wurde erfolgreich an alle ${successCount} Empfänger versendet` 
-        : `E-Mail wurde an ${successCount} Empfänger versendet, ${failureCount} fehlgeschlagen`,
+      success: batchFailureCount === 0,
+      completed: isCompleted,
+      message: isCompleted 
+        ? `E-Mail wurde erfolgreich an alle ${newTotalSent} Empfänger versendet` 
+        : `Batches ${startBatchIndex+1} bis ${endBatchIndex} versendet (${batchSuccessCount} Empfänger), ${contactBatches.length - endBatchIndex} Batches verbleiben`,
       totalRecipients: allContacts.length,
-      successCount,
-      failureCount,
+      batchSuccessCount,
+      batchFailureCount,
+      totalSent: newTotalSent,
+      nextBatchIndex: endBatchIndex,
       batches: results
     });
 

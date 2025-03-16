@@ -263,7 +263,21 @@ export default function Admin() {
 
       setEmailStatus('Speiseplan gespeichert. Starte E-Mail-Versand...');
 
-      // Dann E-Mail versenden - übergebe jetzt auch die Wochennummer und das Jahr
+      // Starte den E-Mail-Versand mit dem ersten Batch
+      await sendEmailBatches(0, 0);
+
+    } catch (error) {
+      console.error('Fehler:', error);
+      setEmailStatus(`Fehler: ${error.message}`);
+      setIsSending(false);
+    }
+  };
+
+  // Neue Funktion zum rekursiven Versenden von E-Mail-Batches
+  const sendEmailBatches = async (startBatchIndex, totalSent) => {
+    try {
+      setEmailStatus(`Versende Batches ${startBatchIndex + 1}-${startBatchIndex + 2}... (${totalSent} Empfänger bisher)`);
+      
       const emailResponse = await fetch('/api/send-menu', {
         method: 'POST',
         headers: {
@@ -273,7 +287,9 @@ export default function Admin() {
           weekStart: weekDates.start,
           weekEnd: weekDates.end,
           weekNumber: selectedWeek.week,
-          year: selectedWeek.year
+          year: selectedWeek.year,
+          startBatchIndex,
+          totalSent
         })
       });
 
@@ -282,18 +298,25 @@ export default function Admin() {
         throw new Error(errorData.message || 'E-Mail-Versand fehlgeschlagen');
       }
 
-      const emailResult = await emailResponse.json();
+      const result = await emailResponse.json();
       
-      if (emailResult.success) {
-        setEmailStatus(`${emailResult.message} (${emailResult.successCount}/${emailResult.totalRecipients} Empfänger)`);
+      if (result.completed) {
+        // Alle Batches wurden versendet
+        setEmailStatus(`${result.message} (${result.totalSent}/${result.totalRecipients} Empfänger)`);
+        setIsSending(false);
       } else {
-        setEmailStatus(`Teilweise erfolgreich: ${emailResult.message}`);
+        // Es gibt noch weitere Batches zu versenden
+        setEmailStatus(`${result.message}`);
+        
+        // Kurze Pause, um Vercel Zeit zum Atmen zu geben
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Nächsten Batch versenden
+        await sendEmailBatches(result.nextBatchIndex, result.totalSent);
       }
-
     } catch (error) {
-      console.error('Fehler:', error);
+      console.error('Fehler beim Versenden der E-Mail-Batches:', error);
       setEmailStatus(`Fehler: ${error.message}`);
-    } finally {
       setIsSending(false);
     }
   };
