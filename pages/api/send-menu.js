@@ -93,7 +93,7 @@ export default async function handler(req, res) {
       });
     }
 
-    const { menu, recipient, weekNumber, year, batchIndex = 0, menuId } = req.body;
+    const { menu, recipient, weekNumber, year, batchIndex = 0 } = req.body;
     
     // Überprüfe, ob die erforderlichen Daten vorhanden sind
     if (!menu) {
@@ -245,10 +245,6 @@ export default async function handler(req, res) {
       
       console.log(`Verarbeite Batches ${currentBatchIndex + 1} bis ${endBatchIndex} von ${batches.length}`);
       
-      // Speichere den aktuellen Batch-Status
-      const actualMenuId = menuId || `menu-${year}-${weekNumber}`;
-      await saveCurrentBatchIndex(actualMenuId, currentBatchIndex, batches.length);
-      
       // Sende eine Bestätigung an den Client
       if (currentBatchIndex === 0) {
         // Erster Durchlauf: Informiere über den Start des Versands
@@ -258,7 +254,7 @@ export default async function handler(req, res) {
           totalBatches: batches.length,
           currentBatch: currentBatchIndex + 1,
           needsMoreRuns: remainingBatches > 0,
-          menuId: actualMenuId
+          batchKey: `${year}-${weekNumber}-${Date.now()}`
         });
       } else {
         // Folgedurchlauf: Informiere über den Fortschritt
@@ -268,7 +264,7 @@ export default async function handler(req, res) {
           totalBatches: batches.length,
           currentBatch: currentBatchIndex + 1,
           needsMoreRuns: remainingBatches > 0,
-          menuId: actualMenuId
+          batchKey: req.body.batchKey
         });
       }
       
@@ -338,9 +334,6 @@ export default async function handler(req, res) {
           
           // Schließe die Verbindung
           batchTransporter.close();
-          
-          // Aktualisiere den Batch-Status nach jedem erfolgreichen Batch
-          await saveCurrentBatchIndex(actualMenuId, i + 1, batches.length);
         } catch (batchError) {
           console.error(`Fehler beim Senden von Batch ${i+1}/${batches.length}:`, batchError);
           errorCount += batch.length;
@@ -349,9 +342,6 @@ export default async function handler(req, res) {
           if (i < endBatchIndex - 1) {
             await sleep(5000);
           }
-          
-          // Aktualisiere den Batch-Status auch bei Fehlern
-          await saveCurrentBatchIndex(actualMenuId, i + 1, batches.length);
         }
       }
       
@@ -371,7 +361,7 @@ export default async function handler(req, res) {
               weekNumber,
               year,
               batchIndex: endBatchIndex,
-              menuId: actualMenuId
+              batchKey: req.body.batchKey || `${year}-${weekNumber}-${Date.now()}`
             })
           }).then(response => {
             console.log(`Nächster Durchlauf geplant, Status: ${response.status}`);

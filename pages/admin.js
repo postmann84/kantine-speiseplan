@@ -7,7 +7,6 @@ import Head from 'next/head';
 import DayMenu from '../components/DayMenu';
 import ContactInfo from '../components/ContactInfo';
 import VacationToggle from '../components/VacationToggle';
-import BatchStatus from '../components/BatchStatus';
 
 export default function Admin() {
   const [loading, setLoading] = useState(false);
@@ -81,8 +80,6 @@ export default function Admin() {
 
   const [isSending, setIsSending] = useState(false);
   const [emailStatus, setEmailStatus] = useState('');
-  const [menuId, setMenuId] = useState(null);
-  const [showBatchStatus, setShowBatchStatus] = useState(false);
 
   const [analyzingMeal, setAnalyzingMeal] = useState(false);
 
@@ -243,42 +240,9 @@ export default function Admin() {
   const handleEmailSend = async () => {
     try {
       setIsSending(true);
-      setEmailStatus('Speichere Menüdaten und bereite E-Mail-Versand vor...');
-
-      // Speichere zuerst die Menüdaten
-      const menuData = {
-        year: selectedWeek.year,
-        weekNumber: selectedWeek.week,
-        weekStart: weekDates.start,
-        weekEnd: weekDates.end,
-        days: weekMenu,
-        contactInfo: contactInfo,
-        vacation: vacationData
-      };
-
-      // Speichere die Daten über die API
-      const saveResponse = await fetch('/api/menu', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(menuData)
-      });
-
-      if (!saveResponse.ok) {
-        throw new Error('Fehler beim Speichern der Menüdaten');
-      }
-
-      const saveResult = await saveResponse.json();
-      
-      // Setze die menuId für die BatchStatus-Komponente
-      if (saveResult.menuId) {
-        setMenuId(saveResult.menuId);
-      }
-      
-      // Sende die E-Mail mit den Menüdaten
       setEmailStatus('Starte E-Mail-Versand...');
-      
+
+      // Sende die E-Mail mit den Menüdaten
       const emailResponse = await fetch('/api/send-menu', {
         method: 'POST',
         headers: {
@@ -292,8 +256,7 @@ export default function Admin() {
             weekEnd: weekDates.end
           },
           year: selectedWeek.year,
-          weekNumber: selectedWeek.week,
-          menuId: saveResult.menuId // Verwende die menuId aus dem Speichern
+          weekNumber: selectedWeek.week
         })
       });
 
@@ -310,16 +273,10 @@ export default function Admin() {
 
       const emailResult = await emailResponse.json();
       
-      // Aktualisiere die menuId, falls sie in der E-Mail-Antwort enthalten ist
-      if (emailResult.menuId) {
-        setMenuId(emailResult.menuId);
-      }
-      
       if (emailResult.success) {
         if (emailResult.needsMoreRuns) {
           // Mehrere Durchläufe erforderlich
           setEmailStatus(`E-Mail-Versand gestartet: Batch ${emailResult.currentBatch}/${emailResult.totalBatches} wird versendet. Der Versand wird im Hintergrund fortgesetzt. Sie erhalten eine Bestätigungs-E-Mail, wenn alle ${emailResult.totalBatches} Batches versendet wurden.`);
-          setShowBatchStatus(true);
         } else if (emailResult.totalBatches > 1) {
           // Mehrere Batches, aber nur ein Durchlauf
           setEmailStatus(`E-Mail-Versand erfolgreich: ${emailResult.totalBatches} Batches werden versendet. Sie erhalten eine Bestätigungs-E-Mail, wenn der Versand abgeschlossen ist.`);
@@ -341,7 +298,6 @@ export default function Admin() {
   // Callback-Funktion für den Abschluss des Batch-Prozesses
   const handleBatchComplete = () => {
     setEmailStatus('E-Mail-Versand abgeschlossen! Alle Batches wurden erfolgreich versendet.');
-    setShowBatchStatus(false);
   };
 
   const analyzeMeal = async (mealName) => {
@@ -597,14 +553,6 @@ export default function Admin() {
           <div className="mt-4 p-4 bg-blue-100 rounded-lg">
             <p className="text-blue-800">{emailStatus}</p>
           </div>
-        )}
-        
-        {/* Batch-Status-Anzeige */}
-        {showBatchStatus && menuId && (
-          <BatchStatus 
-            menuId={menuId} 
-            onComplete={handleBatchComplete} 
-          />
         )}
       </div>
     </div>
