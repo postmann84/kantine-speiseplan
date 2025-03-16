@@ -2,6 +2,12 @@ import { useState, useEffect } from 'react';
 import { Save, Loader, AlertCircle } from 'lucide-react';
 import { getHolidaysForWeek } from '../lib/holidays';
 import { formatDate, getWeekNumber, getWeekDates } from '../lib/dateUtils';
+import { useRouter } from 'next/router';
+import Head from 'next/head';
+import DayMenu from '../components/DayMenu';
+import ContactInfo from '../components/ContactInfo';
+import VacationToggle from '../components/VacationToggle';
+import BatchStatus from '../components/BatchStatus';
 
 export default function Admin() {
   const [loading, setLoading] = useState(false);
@@ -75,6 +81,8 @@ export default function Admin() {
 
   const [isSending, setIsSending] = useState(false);
   const [emailStatus, setEmailStatus] = useState('');
+  const [menuId, setMenuId] = useState(null);
+  const [showBatchStatus, setShowBatchStatus] = useState(false);
 
   const [analyzingMeal, setAnalyzingMeal] = useState(false);
 
@@ -235,9 +243,9 @@ export default function Admin() {
   const handleEmailSend = async () => {
     try {
       setIsSending(true);
-      setEmailStatus('Speichere Speiseplan...');
-      
-      // Zuerst den Speiseplan speichern
+      setEmailStatus('Speichere Menüdaten und bereite E-Mail-Versand vor...');
+
+      // Speichere zuerst die Menüdaten
       const menuData = {
         year: selectedWeek.year,
         weekNumber: selectedWeek.week,
@@ -245,10 +253,10 @@ export default function Admin() {
         weekEnd: weekDates.end,
         days: weekMenu,
         contactInfo: contactInfo,
-        vacation: vacationData,
-        createdAt: new Date()
+        vacation: vacationData
       };
 
+      // Speichere die Daten über die API
       const saveResponse = await fetch('/api/menu', {
         method: 'POST',
         headers: {
@@ -256,62 +264,84 @@ export default function Admin() {
         },
         body: JSON.stringify(menuData)
       });
-      
+
       if (!saveResponse.ok) {
-        throw new Error('Fehler beim Speichern des Speiseplans');
+        throw new Error('Fehler beim Speichern der Menüdaten');
+      }
+
+      const saveResult = await saveResponse.json();
+      
+      // Setze die menuId für die BatchStatus-Komponente
+      if (saveResult.menuId) {
+        setMenuId(saveResult.menuId);
       }
       
-      setEmailStatus('Speiseplan gespeichert. Starte E-Mail-Versand...');
+      // Sende die E-Mail mit den Menüdaten
+      setEmailStatus('Starte E-Mail-Versand...');
       
-      // E-Mail versenden mit dem gespeicherten Menü
       const emailResponse = await fetch('/api/send-menu', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          menu: menuData,
+          menu: {
+            days: weekMenu,
+            contactInfo: contactInfo,
+            weekStart: weekDates.start,
+            weekEnd: weekDates.end
+          },
+          year: selectedWeek.year,
           weekNumber: selectedWeek.week,
-          year: selectedWeek.year
+          menuId: saveResult.menuId // Verwende die menuId aus dem Speichern
         })
       });
-      
-      // Verbesserte Fehlerbehandlung
+
       if (!emailResponse.ok) {
-        const contentType = emailResponse.headers.get('content-type');
-        if (contentType && contentType.includes('application/json')) {
-          // Wenn die Antwort JSON ist, versuche sie zu parsen
+        let errorMessage = 'Fehler beim Versenden der E-Mail';
+        try {
           const errorData = await emailResponse.json();
-          throw new Error(errorData.message || 'E-Mail-Versand fehlgeschlagen');
-        } else {
-          // Wenn die Antwort kein JSON ist, verwende den Statustext
-          const errorText = await emailResponse.text();
-          throw new Error(`E-Mail-Versand fehlgeschlagen: ${errorText || emailResponse.statusText}`);
+          errorMessage = errorData.message || errorData.error || errorMessage;
+        } catch (e) {
+          // Ignoriere Fehler beim Parsen der JSON-Antwort
         }
+        throw new Error(errorMessage);
       }
 
-      // Erfolgreiche Antwort verarbeiten
-      const contentType = emailResponse.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
-        const emailResult = await emailResponse.json();
-        
-        if (emailResult.batchCount) {
-          // Wenn Batches verwendet werden, zeige eine entsprechende Meldung an
-          setEmailStatus(`E-Mail-Versand an alle Kontakte gestartet! Die E-Mails werden in ${emailResult.batchCount} Gruppen versendet. Sie erhalten eine Bestätigung per E-Mail, wenn der Versand abgeschlossen ist.`);
+      const emailResult = await emailResponse.json();
+      
+      // Aktualisiere die menuId, falls sie in der E-Mail-Antwort enthalten ist
+      if (emailResult.menuId) {
+        setMenuId(emailResult.menuId);
+      }
+      
+      if (emailResult.success) {
+        if (emailResult.needsMoreRuns) {
+          // Mehrere Durchläufe erforderlich
+          setEmailStatus(`E-Mail-Versand gestartet: Batch ${emailResult.currentBatch}/${emailResult.totalBatches} wird versendet. Der Versand wird im Hintergrund fortgesetzt. Sie erhalten eine Bestätigungs-E-Mail, wenn alle ${emailResult.totalBatches} Batches versendet wurden.`);
+          setShowBatchStatus(true);
+        } else if (emailResult.totalBatches > 1) {
+          // Mehrere Batches, aber nur ein Durchlauf
+          setEmailStatus(`E-Mail-Versand erfolgreich: ${emailResult.totalBatches} Batches werden versendet. Sie erhalten eine Bestätigungs-E-Mail, wenn der Versand abgeschlossen ist.`);
         } else {
-          // Standardmeldung für einzelne E-Mails
-          setEmailStatus(`E-Mail wurde erfolgreich versendet! ${emailResult.message || ''}`);
+          // Einzelner Empfänger oder einzelner Batch
+          setEmailStatus('E-Mail wurde erfolgreich versendet!');
         }
       } else {
-        setEmailStatus('E-Mail wurde erfolgreich versendet!');
+        setEmailStatus(`Fehler beim E-Mail-Versand: ${emailResult.message}`);
       }
-
     } catch (error) {
-      console.error('Fehler:', error);
+      console.error('Fehler beim E-Mail-Versand:', error);
       setEmailStatus(`Fehler: ${error.message}`);
     } finally {
       setIsSending(false);
     }
+  };
+
+  // Callback-Funktion für den Abschluss des Batch-Prozesses
+  const handleBatchComplete = () => {
+    setEmailStatus('E-Mail-Versand abgeschlossen! Alle Batches wurden erfolgreich versendet.');
+    setShowBatchStatus(false);
   };
 
   const analyzeMeal = async (mealName) => {
@@ -429,7 +459,11 @@ export default function Admin() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="container mx-auto px-4 py-8">
+      <Head>
+        <title>Admin - Speiseplan</title>
+      </Head>
+      
       <div className="max-w-4xl mx-auto p-4">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-2xl font-bold">Menü-Verwaltung</h1>
@@ -720,10 +754,20 @@ export default function Admin() {
           </div>
         </form>
 
-        {/* Status-Meldung */}
-        <div className="mt-2 text-sm">
-          {emailStatus && <p className="text-gray-600">{emailStatus}</p>}
-        </div>
+        {/* Status-Meldung für E-Mail-Versand */}
+        {emailStatus && (
+          <div className="mt-4 p-4 bg-blue-100 rounded-lg">
+            <p className="text-blue-800">{emailStatus}</p>
+          </div>
+        )}
+        
+        {/* Batch-Status-Anzeige */}
+        {showBatchStatus && menuId && (
+          <BatchStatus 
+            menuId={menuId} 
+            onComplete={handleBatchComplete} 
+          />
+        )}
       </div>
     </div>
   );

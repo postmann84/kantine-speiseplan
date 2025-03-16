@@ -26,7 +26,10 @@ function getWeek(date) {
 }
 
 // Maximale Anzahl von Empfängern pro E-Mail-Batch
-const BATCH_SIZE = 10;
+const BATCH_SIZE = 38;
+
+// Maximale Anzahl von Batches pro Durchlauf in Vercel (um Timeouts zu vermeiden)
+const MAX_BATCHES_PER_RUN = 1;
 
 // Hilfsfunktion zum Aufteilen der Empfängerliste in Gruppen
 function chunkArray(array, chunkSize) {
@@ -39,6 +42,28 @@ function chunkArray(array, chunkSize) {
 
 // Hilfsfunktion zum Warten
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Hilfsfunktion zum Speichern des aktuellen Batch-Index in der Datenbank
+async function saveCurrentBatchIndex(menuId, currentBatchIndex, totalBatches) {
+  try {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_WEBSITE_URL || ''}/api/save-batch-state`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        menuId,
+        currentBatchIndex,
+        totalBatches
+      })
+    });
+    
+    return response.ok;
+  } catch (error) {
+    console.error('Fehler beim Speichern des Batch-Index:', error);
+    return false;
+  }
+}
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -68,7 +93,7 @@ export default async function handler(req, res) {
       });
     }
 
-    const { menu, recipient, weekNumber, year } = req.body;
+    const { menu, recipient, weekNumber, year, batchIndex = 0, menuId } = req.body;
     
     // Überprüfe, ob die erforderlichen Daten vorhanden sind
     if (!menu) {
@@ -205,23 +230,47 @@ export default async function handler(req, res) {
       const contactList = process.env.EMAIL_LIST_KOLLEGEN || '';
       const allContacts = contactList.split(',').map(email => email.trim()).filter(email => email);
       
-      // Begrenze die Anzahl der Kontakte für Vercel (um Timeouts zu vermeiden)
-      // In der Vercel-Umgebung senden wir nur an die ersten 50 Kontakte
-      const isVercel = process.env.VERCEL === '1';
-      const contacts = isVercel ? allContacts.slice(0, 50) : allContacts;
-      
-      console.log(`Sende E-Mail an ${contacts.length} Empfänger...`);
-      
       // Teile die Kontakte in Batches auf
-      const batches = chunkArray(contacts, BATCH_SIZE);
+      const batches = chunkArray(allContacts, BATCH_SIZE);
       console.log(`Aufgeteilt in ${batches.length} Batches mit je maximal ${BATCH_SIZE} Empfängern`);
       
-      // Sende eine Bestätigung an den Client, dass der Versand gestartet wurde
-      res.status(200).json({ 
-        success: true, 
-        message: `E-Mail-Versand an ${contacts.length} Empfänger gestartet`,
-        batchCount: batches.length
-      });
+      // Bestimme den aktuellen Batch-Index und die maximale Anzahl von Batches für diesen Durchlauf
+      const currentBatchIndex = parseInt(batchIndex) || 0;
+      const isVercel = process.env.VERCEL === '1';
+      const maxBatchesThisRun = isVercel ? MAX_BATCHES_PER_RUN : batches.length;
+      const endBatchIndex = Math.min(currentBatchIndex + maxBatchesThisRun, batches.length);
+      
+      // Berechne die verbleibenden Batches nach diesem Durchlauf
+      const remainingBatches = batches.length - endBatchIndex;
+      
+      console.log(`Verarbeite Batches ${currentBatchIndex + 1} bis ${endBatchIndex} von ${batches.length}`);
+      
+      // Speichere den aktuellen Batch-Status
+      const actualMenuId = menuId || `menu-${year}-${weekNumber}`;
+      await saveCurrentBatchIndex(actualMenuId, currentBatchIndex, batches.length);
+      
+      // Sende eine Bestätigung an den Client
+      if (currentBatchIndex === 0) {
+        // Erster Durchlauf: Informiere über den Start des Versands
+        res.status(200).json({ 
+          success: true, 
+          message: `E-Mail-Versand an ${allContacts.length} Empfänger gestartet`,
+          totalBatches: batches.length,
+          currentBatch: currentBatchIndex + 1,
+          needsMoreRuns: remainingBatches > 0,
+          menuId: actualMenuId
+        });
+      } else {
+        // Folgedurchlauf: Informiere über den Fortschritt
+        res.status(200).json({ 
+          success: true, 
+          message: `E-Mail-Versand wird fortgesetzt (Batch ${currentBatchIndex + 1}/${batches.length})`,
+          totalBatches: batches.length,
+          currentBatch: currentBatchIndex + 1,
+          needsMoreRuns: remainingBatches > 0,
+          menuId: actualMenuId
+        });
+      }
       
       // Einfache Konfiguration für nodemailer mit erhöhten Timeouts
       const transporter = nodemailer.createTransport({
@@ -241,7 +290,7 @@ export default async function handler(req, res) {
       let successCount = 0;
       let errorCount = 0;
       
-      for (let i = 0; i < batches.length; i++) {
+      for (let i = currentBatchIndex; i < endBatchIndex; i++) {
         const batch = batches[i];
         console.log(`Sende Batch ${i+1}/${batches.length} mit ${batch.length} Empfängern...`);
         
@@ -283,50 +332,86 @@ export default async function handler(req, res) {
           successCount += batch.length;
           
           // Warte 2 Sekunden zwischen den Batches, um den Server nicht zu überlasten
-          if (i < batches.length - 1) {
+          if (i < endBatchIndex - 1) {
             await sleep(2000);
           }
           
           // Schließe die Verbindung
           batchTransporter.close();
+          
+          // Aktualisiere den Batch-Status nach jedem erfolgreichen Batch
+          await saveCurrentBatchIndex(actualMenuId, i + 1, batches.length);
         } catch (batchError) {
           console.error(`Fehler beim Senden von Batch ${i+1}/${batches.length}:`, batchError);
           errorCount += batch.length;
           
           // Bei Fehler: Warte 5 Sekunden vor dem nächsten Versuch
-          if (i < batches.length - 1) {
+          if (i < endBatchIndex - 1) {
             await sleep(5000);
           }
+          
+          // Aktualisiere den Batch-Status auch bei Fehlern
+          await saveCurrentBatchIndex(actualMenuId, i + 1, batches.length);
         }
       }
       
-      // Sende eine Zusammenfassung an den Absender
-      try {
-        const summaryOptions = {
-          from: {
-            name: 'Betriebskantine',
-            address: process.env.EMAIL_USER
-          },
-          to: process.env.EMAIL_USER,
-          subject: `Speiseplan ${dateRange} - Versand abgeschlossen`,
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <h2 style="color: #1a365d;">E-Mail-Versand abgeschlossen</h2>
-              <p>Der Versand des Speiseplans für die Woche vom ${dateRange} wurde abgeschlossen.</p>
-              <p>Erfolgreich: ${successCount} Empfänger</p>
-              <p>Fehler: ${errorCount} Empfänger</p>
-              <p>Gesamtzahl: ${contacts.length} Empfänger</p>
-            </div>
-          `
-        };
+      // Wenn noch weitere Durchläufe erforderlich sind, plane den nächsten Durchlauf
+      if (remainingBatches > 0 && isVercel) {
+        console.log(`Es sind noch ${remainingBatches} Batches zu verarbeiten. Plane nächsten Durchlauf...`);
         
-        await transporter.sendMail(summaryOptions);
-        console.log('Zusammenfassung an Absender gesendet');
-      } catch (summaryError) {
-        console.error('Fehler beim Senden der Zusammenfassung:', summaryError);
+        try {
+          // Rufe die API erneut auf, um den nächsten Batch zu verarbeiten
+          fetch(`${process.env.NEXT_PUBLIC_WEBSITE_URL || ''}/api/send-menu`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              menu,
+              weekNumber,
+              year,
+              batchIndex: endBatchIndex,
+              menuId: actualMenuId
+            })
+          }).then(response => {
+            console.log(`Nächster Durchlauf geplant, Status: ${response.status}`);
+          }).catch(error => {
+            console.error('Fehler beim Planen des nächsten Durchlaufs:', error);
+          });
+        } catch (nextRunError) {
+          console.error('Fehler beim Planen des nächsten Durchlaufs:', nextRunError);
+        }
+      } else if (remainingBatches === 0) {
+        // Alle Batches wurden verarbeitet, sende eine Zusammenfassung
+        console.log('Alle Batches wurden verarbeitet. Sende Zusammenfassung...');
+        
+        try {
+          const summaryOptions = {
+            from: {
+              name: 'Betriebskantine',
+              address: process.env.EMAIL_USER
+            },
+            to: process.env.EMAIL_USER,
+            subject: `Speiseplan ${dateRange} - Versand abgeschlossen`,
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2 style="color: #1a365d;">E-Mail-Versand abgeschlossen</h2>
+                <p>Der Versand des Speiseplans für die Woche vom ${dateRange} wurde abgeschlossen.</p>
+                <p>Erfolgreich: ${successCount} Empfänger</p>
+                <p>Fehler: ${errorCount} Empfänger</p>
+                <p>Gesamtzahl: ${allContacts.length} Empfänger</p>
+              </div>
+            `
+          };
+          
+          await transporter.sendMail(summaryOptions);
+          console.log('Zusammenfassung an Absender gesendet');
+        } catch (summaryError) {
+          console.error('Fehler beim Senden der Zusammenfassung:', summaryError);
+        }
       }
       
-      console.log(`E-Mail-Versand abgeschlossen. Erfolg: ${successCount}, Fehler: ${errorCount}`);
+      console.log(`E-Mail-Versand für diesen Durchlauf abgeschlossen. Erfolg: ${successCount}, Fehler: ${errorCount}`);
     }
   } catch (error) {
     console.error('Detaillierte Fehlerinformation:', error);

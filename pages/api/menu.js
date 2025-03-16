@@ -1,69 +1,71 @@
 // pages/api/menu.js
-import dbConnect from '../../lib/mongodb';
-import Menu from '../../models/menu';
+import fs from 'fs';
+import path from 'path';
+import { v4 as uuidv4 } from 'uuid';
 
 export default async function handler(req, res) {
-  await dbConnect();
-
-  // GET: Lade aktuellen (veröffentlichten) Speiseplan
-  if (req.method === 'GET') {
-    try {
-      const menu = await Menu.findOne({ isPublished: true }).lean();
-
-      if (!menu) {
-        return res.status(200).json({
-          success: false,
-          message: 'Aktuell ist kein Speiseplan verfügbar.'
-        });
-      }
-
-      return res.status(200).json({
-        success: true,
-        data: menu
-      });
-    } catch (error) {
-      console.error('API Error:', error);
-      return res.status(500).json({
-        success: false,
-        error: 'Interner Serverfehler'
-      });
-    }
-  }
-
-  // POST: Speichere oder aktualisiere Speiseplan
   if (req.method === 'POST') {
     try {
-      const menuData = req.body;
+      // Generiere eine eindeutige ID für das Menü
+      const menuId = uuidv4();
       
-      // Suche nach existierendem Menü für diese Woche
-      const existingMenu = await Menu.findOne({
-        year: menuData.year,
-        weekNumber: menuData.weekNumber
-      });
-
-      let result;
-      if (existingMenu) {
-        // Aktualisiere existierendes Menü
-        result = await Menu.findByIdAndUpdate(
-          existingMenu._id,
-          menuData,
-          { new: true }
-        );
-      } else {
-        // Erstelle neues Menü
-        result = await Menu.create(menuData);
+      // Füge die ID und das aktuelle Datum zum Menü hinzu
+      const menuData = {
+        ...req.body,
+        id: menuId,
+        createdAt: new Date().toISOString()
+      };
+      
+      // Speichere das Menü in einer Datei
+      const dataDir = path.join(process.cwd(), 'data');
+      if (!fs.existsSync(dataDir)) {
+        fs.mkdirSync(dataDir, { recursive: true });
       }
-
-      return res.status(200).json({
-        success: true,
-        data: result
+      
+      const filePath = path.join(dataDir, 'menu.json');
+      fs.writeFileSync(filePath, JSON.stringify(menuData, null, 2));
+      
+      res.status(200).json({ 
+        success: true, 
+        message: 'Menü erfolgreich gespeichert',
+        menuId: menuId
       });
     } catch (error) {
-      console.error('Fehler beim Speichern:', error);
-      return res.status(500).json({
-        success: false,
-        error: 'Fehler beim Speichern des Menüs'
+      console.error('Fehler beim Speichern des Menüs:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Fehler beim Speichern des Menüs',
+        error: error.message
       });
     }
+  } else if (req.method === 'GET') {
+    try {
+      const filePath = path.join(process.cwd(), 'data', 'menu.json');
+      
+      if (!fs.existsSync(filePath)) {
+        return res.status(404).json({ 
+          success: false, 
+          message: 'Kein Menü gefunden' 
+        });
+      }
+      
+      const menuData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+      res.status(200).json({ 
+        success: true, 
+        menu: menuData 
+      });
+    } catch (error) {
+      console.error('Fehler beim Laden des Menüs:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Fehler beim Laden des Menüs',
+        error: error.message
+      });
+    }
+  } else {
+    res.status(405).json({ 
+      success: false, 
+      message: 'Methode nicht erlaubt' 
+    });
   }
 }
