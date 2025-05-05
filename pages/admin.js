@@ -25,36 +25,36 @@ export default function Admin() {
     { 
       day: 'Montag', 
       meals: [
-        { name: '', price: 4.80, isAction: false, actionNote: '' },
-        { name: '', price: 6.80, isAction: false, actionNote: '' }
+        { name: '', price: 5.00, isAction: false, actionNote: '' },
+        { name: '', price: 7.00, isAction: false, actionNote: '' }
       ] 
     },
     { 
       day: 'Dienstag', 
       meals: [
-        { name: '', price: 4.80, isAction: false, actionNote: '' },
-        { name: '', price: 6.80, isAction: false, actionNote: '' }
+        { name: '', price: 5.00, isAction: false, actionNote: '' },
+        { name: '', price: 7.00, isAction: false, actionNote: '' }
       ] 
     },
     { 
       day: 'Mittwoch', 
       meals: [
-        { name: '', price: 4.80, isAction: false, actionNote: '' },
-        { name: '', price: 6.80, isAction: false, actionNote: '' }
+        { name: '', price: 5.00, isAction: false, actionNote: '' },
+        { name: '', price: 7.00, isAction: false, actionNote: '' }
       ] 
     },
     { 
       day: 'Donnerstag', 
       meals: [
-        { name: '', price: 4.80, isAction: false, actionNote: '' },
-        { name: '', price: 6.80, isAction: false, actionNote: '' }
+        { name: '', price: 5.00, isAction: false, actionNote: '' },
+        { name: '', price: 7.00, isAction: false, actionNote: '' }
       ] 
     },
     { 
       day: 'Freitag', 
       meals: [
-        { name: '', price: 4.80, isAction: false, actionNote: '' },
-        { name: '', price: 6.80, isAction: false, actionNote: '' }
+        { name: '', price: 5.00, isAction: false, actionNote: '' },
+        { name: '', price: 7.00, isAction: false, actionNote: '' }
       ] 
     }
   ]);
