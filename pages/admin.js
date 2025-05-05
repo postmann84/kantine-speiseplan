@@ -83,8 +83,8 @@ export default function Admin() {
 
   // Standardpreise als Konstanten
   const DEFAULT_PRICES = {
-    meal1: 4.80,
-    meal2: 6.80
+    meal1: 5.00,
+    meal2: 7.00
   };
 
   // Laden des Menüs für die ausgewählte Woche
