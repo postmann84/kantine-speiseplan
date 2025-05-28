@@ -25,36 +25,36 @@ export default function Admin() {
     { 
       day: 'Montag', 
       meals: [
-        { name: '', price: 4.80, isAction: false, actionNote: '' },
-        { name: '', price: 6.80, isAction: false, actionNote: '' }
+        { name: '', price: 5.00, isAction: false, actionNote: '' },
+        { name: '', price: 7.00, isAction: false, actionNote: '' }
       ] 
     },
     { 
       day: 'Dienstag', 
       meals: [
-        { name: '', price: 4.80, isAction: false, actionNote: '' },
-        { name: '', price: 6.80, isAction: false, actionNote: '' }
+        { name: '', price: 5.00, isAction: false, actionNote: '' },
+        { name: '', price: 7.00, isAction: false, actionNote: '' }
       ] 
     },
     { 
       day: 'Mittwoch', 
       meals: [
-        { name: '', price: 4.80, isAction: false, actionNote: '' },
-        { name: '', price: 6.80, isAction: false, actionNote: '' }
+        { name: '', price: 5.00, isAction: false, actionNote: '' },
+        { name: '', price: 7.00, isAction: false, actionNote: '' }
       ] 
     },
     { 
       day: 'Donnerstag', 
       meals: [
-        { name: '', price: 4.80, isAction: false, actionNote: '' },
-        { name: '', price: 6.80, isAction: false, actionNote: '' }
+        { name: '', price: 5.00, isAction: false, actionNote: '' },
+        { name: '', price: 7.00, isAction: false, actionNote: '' }
       ] 
     },
     { 
       day: 'Freitag', 
       meals: [
-        { name: '', price: 4.80, isAction: false, actionNote: '' },
-        { name: '', price: 6.80, isAction: false, actionNote: '' }
+        { name: '', price: 5.00, isAction: false, actionNote: '' },
+        { name: '', price: 7.00, isAction: false, actionNote: '' }
       ] 
     }
   ]);
@@ -83,8 +83,8 @@ export default function Admin() {
 
   // Standardpreise als Konstanten
   const DEFAULT_PRICES = {
-    meal1: 4.80,
-    meal2: 6.80
+    meal1: 5.00,
+    meal2: 7.00
   };
 
   // Laden des Menüs für die ausgewählte Woche
@@ -109,11 +109,11 @@ export default function Admin() {
         } else {
           // Wenn kein Menü gefunden wurde, setze Standardwerte
           setWeekMenu([
-            { day: 'Montag', meals: [{ name: '', price: 4.80, isAction: false }, { name: '', price: 6.80, isAction: false }] },
-            { day: 'Dienstag', meals: [{ name: '', price: 4.80, isAction: false }, { name: '', price: 6.80, isAction: false }] },
-            { day: 'Mittwoch', meals: [{ name: '', price: 4.80, isAction: false }, { name: '', price: 6.80, isAction: false }] },
-            { day: 'Donnerstag', meals: [{ name: '', price: 4.80, isAction: false }, { name: '', price: 6.80, isAction: false }] },
-            { day: 'Freitag', meals: [{ name: '', price: 4.80, isAction: false }, { name: '', price: 6.80, isAction: false }] }
+            { day: 'Montag', meals: [{ name: '', price: 5.00, isAction: false }, { name: '', price: 7.00, isAction: false }] },
+            { day: 'Dienstag', meals: [{ name: '', price: 5.00, isAction: false }, { name: '', price: 7.00, isAction: false }] },
+            { day: 'Mittwoch', meals: [{ name: '', price: 5.00, isAction: false }, { name: '', price: 7.00, isAction: false }] },
+            { day: 'Donnerstag', meals: [{ name: '', price: 5.00, isAction: false }, { name: '', price: 7.00, isAction: false }] },
+            { day: 'Freitag', meals: [{ name: '', price: 5.00, isAction: false }, { name: '', price: 7.00, isAction: false }] }
           ]);
           setIsPublished(false);
         }
