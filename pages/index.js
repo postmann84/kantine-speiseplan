@@ -54,11 +54,9 @@ export default function Home() {
         }
 
         setMenu(data.data);
-        // Hole Feiertage nur wenn kein Urlaub aktiv ist
-        if (!data.data.vacation?.isOnVacation) {
-          const weekHolidays = getHolidaysForWeek(data.data.weekStart);
-          setHolidays(weekHolidays);
-        }
+        // Hole Feiertage immer, unabhängig vom Urlaubsstatus
+        const weekHolidays = getHolidaysForWeek(data.data.weekStart);
+        setHolidays(weekHolidays);
       } catch (error) {
         setError('Fehler beim Laden des Speiseplans');
       } finally {
@@ -208,20 +206,20 @@ export default function Home() {
             </h2>
             
             {/* Feiertags-Badge - dezenteres Design */}
-            {holidays[dateStr] && (
+            {holidayInfo && (
               <div className={`px-2 py-1 text-xs rounded-md self-start ${
-                holidays[dateStr].type === 'holiday' && holidays[dateStr].isLegalHolidayInLowerSaxony
+                holidayInfo.type === 'holiday' && holidayInfo.isLegalHolidayInLowerSaxony
                   ? 'bg-red-50 text-red-700 border border-red-200' 
-                  : `bg-${holidays[dateStr].color}-50 text-${holidays[dateStr].color}-700 border border-${holidays[dateStr].color}-200`
+                  : `bg-${holidayInfo.color}-50 text-${holidayInfo.color}-700 border border-${holidayInfo.color}-200`
               }`}>
-                {holidays[dateStr].name}
+                {holidayInfo.name}
               </div>
             )}
           </div>
 
           {/* Geschlossen-Nachricht für gesetzliche Feiertage */}
-          {(holidays[dateStr]?.type === 'holiday' && 
-            holidays[dateStr]?.isLegalHolidayInLowerSaxony) ? (
+          {(holidayInfo?.type === 'holiday' && 
+            holidayInfo?.isLegalHolidayInLowerSaxony) ? (
             <div className="mt-2 p-2 bg-gray-50 rounded text-gray-600 text-center text-sm">
               An gesetzlichen Feiertagen bleibt die Kantine geschlossen
             </div>
