@@ -197,7 +197,7 @@ export default function Home() {
     return (
       <div key={index} className={`mb-4 rounded-lg shadow-md overflow-hidden
         ${isCurrentDay ? 'ring-2 ring-blue-500' : ''}
-        ${isVacationDay ? 'bg-yellow-50' : 'bg-white'}`}
+        ${isVacationDay ? 'bg-yellow-50 border-2 border-yellow-300' : 'bg-white'}`}
       >
         <div className="p-4">
           <div className="flex justify-between items-center">
@@ -206,7 +206,7 @@ export default function Home() {
             </h2>
             
             {/* Feiertags-Badge - dezenteres Design */}
-            {holidayInfo && (
+            {holidayInfo && !isVacationDay && (
               <div className={`px-2 py-1 text-xs rounded-md self-start ${
                 holidayInfo.type === 'holiday' && holidayInfo.isLegalHolidayInLowerSaxony
                   ? 'bg-red-50 text-red-700 border border-red-200' 
@@ -217,50 +217,65 @@ export default function Home() {
             )}
           </div>
 
-          {/* Geschlossen-Nachricht für gesetzliche Feiertage */}
-          {(holidayInfo?.type === 'holiday' && 
-            holidayInfo?.isLegalHolidayInLowerSaxony) ? (
-            <div className="mt-2 p-2 bg-gray-50 rounded text-gray-600 text-center text-sm">
-              An gesetzlichen Feiertagen bleibt die Kantine geschlossen
+          {/* Urlaubstag-Anzeige */}
+          {isVacationDay ? (
+            <div className="mt-4 p-6 bg-yellow-100 rounded-lg text-center">
+              <div className="text-4xl mb-3">🌴</div>
+              <h3 className="text-lg font-semibold text-yellow-800 mb-2">
+                Urlaubstag
+              </h3>
+              <p className="text-yellow-700">
+                {menu.vacation?.message || 'Wir befinden uns im Urlaub.'}
+              </p>
             </div>
           ) : (
-            <div className="mt-4 space-y-3">
-              {/* Menü-Einträge */}
-              {!day.isClosed ? (
-                <div className="space-y-2">
-                  {day.meals?.map((meal, mealIndex) => (
-                    <div 
-                      key={mealIndex} 
-                      className={`flex items-center justify-between ${meal.isAction ? 'bg-yellow-50 p-2 rounded' : ''}`}
-                    >
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="mr-2 font-medium">{meal.name}</span>
-                          {meal.isAction && (
-                            <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded">
-                              Aktionsessen
-                            </span>
-                          )}
-                        </div>
-                        {meal.isAction && meal.actionNote && (
-                          <div className="text-sm text-yellow-800 mt-1 font-medium">{meal.actionNote}</div>
-                        )}
-                      </div>
-                      <div className="flex items-center">
-                        <span className="text-xl mr-2">{meal.icon}</span>
-                        <span className="text-gray-700 font-semibold">
-                          {meal.price.toFixed(2)} €
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+            <>
+              {/* Geschlossen-Nachricht für gesetzliche Feiertage */}
+              {(holidayInfo?.type === 'holiday' && 
+                holidayInfo?.isLegalHolidayInLowerSaxony) ? (
+                <div className="mt-2 p-2 bg-gray-50 rounded text-gray-600 text-center text-sm">
+                  An gesetzlichen Feiertagen bleibt die Kantine geschlossen
                 </div>
               ) : (
-                <p className="text-gray-500 italic">
-                  {day.closedReason || 'Heute geschlossen'}
-                </p>
+                <div className="mt-4 space-y-3">
+                  {/* Menü-Einträge */}
+                  {!day.isClosed ? (
+                    <div className="space-y-2">
+                      {day.meals?.map((meal, mealIndex) => (
+                        <div 
+                          key={mealIndex} 
+                          className={`flex items-center justify-between ${meal.isAction ? 'bg-yellow-50 p-2 rounded' : ''}`}
+                        >
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="mr-2 font-medium">{meal.name}</span>
+                              {meal.isAction && (
+                                <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded">
+                                  Aktionsessen
+                                </span>
+                              )}
+                            </div>
+                            {meal.isAction && meal.actionNote && (
+                              <div className="text-sm text-yellow-800 mt-1 font-medium">{meal.actionNote}</div>
+                            )}
+                          </div>
+                          <div className="flex items-center">
+                            <span className="text-xl mr-2">{meal.icon}</span>
+                            <span className="text-gray-700 font-semibold">
+                              {meal.price.toFixed(2)} €
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-gray-500 italic">
+                      {day.closedReason || 'Heute geschlossen'}
+                    </p>
+                  )}
+                </div>
               )}
-            </div>
+            </>
           )}
         </div>
       </div>
