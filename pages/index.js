@@ -1,14 +1,21 @@
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
 import { getHolidaysForWeek } from '../lib/holidays';
 import { formatDate, isSameDay, formatFullDate } from '../lib/dateUtils';
 import { QRCodeSVG } from 'qrcode.react';
 import PrintMenu from '../components/PrintMenu';
+import { ALLERGENS, ADDITIVES, formatCodesInline } from '../lib/allergenTaxonomy';
 
 export default function Home() {
+  const router = useRouter();
   const [menu, setMenu] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [holidays, setHolidays] = useState({});
+  const [allergenPopup, setAllergenPopup] = useState({ open: false, mealName: '', allergens: [], additives: [] });
+  
+  // Kiosk-Modus für Monitor-Anzeige
+  const isKioskMode = router.isReady && router.query.kiosk === 'true';
 
   // Prüft ob ein Datum im aktiven Urlaubszeitraum liegt
   const isDateInVacation = (date, vacation) => {
@@ -54,6 +61,8 @@ export default function Home() {
         }
 
         setMenu(data.data);
+        console.log('Menu data:', data.data); // Debug log
+        console.log('Menu days:', data.data?.days); // Debug log
         // Hole Feiertage immer, unabhängig vom Urlaubsstatus
         const weekHolidays = getHolidaysForWeek(data.data.weekStart);
         setHolidays(weekHolidays);
@@ -248,7 +257,25 @@ export default function Home() {
                         >
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
-                              <span className="mr-2 font-medium">{meal.name}</span>
+                              <span className="mr-2 font-medium">
+                                {meal.name}
+                                {(meal.allergenCodes?.length > 0 || meal.additiveCodes?.length > 0) && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setAllergenPopup({
+                                      open: true,
+                                      mealName: meal.name,
+                                      allergens: meal.allergenCodes || [],
+                                      additives: meal.additiveCodes || []
+                                    })}
+                                    className="ml-1 text-xs px-1 py-0.5 bg-gray-100 border rounded hover:bg-gray-200"
+                                    title="Allergene/Zusatzstoffe anzeigen"
+                                    style={{ fontSize: '9px', lineHeight: '1', verticalAlign: 'super' }}
+                                  >
+                                    {formatCodesInline(meal.allergenCodes, meal.additiveCodes)}
+                                  </button>
+                                )}
+                              </span>
                               {meal.isAction && (
                                 <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded">
                                   Aktionsessen
@@ -284,7 +311,58 @@ export default function Home() {
 
   // Normaler Return für nicht-Urlaubszeit
   return (
-    <div className="max-w-4xl mx-auto p-4">
+    <>
+      {isKioskMode && (
+        <style jsx>{`
+          .kiosk-mode {
+            padding: 0.5rem !important;
+            font-size: 0.9em;
+          }
+          .kiosk-mode .container {
+            max-width: 100% !important;
+            padding: 0.5rem !important;
+          }
+          .kiosk-mode h1 {
+            font-size: 1.5rem !important;
+            margin-bottom: 0.5rem !important;
+          }
+          .kiosk-mode .day-section {
+            margin-bottom: 0.75rem !important;
+            padding: 0.5rem !important;
+          }
+          .kiosk-mode .meal-item {
+            padding: 0.375rem !important;
+            font-size: 0.85rem !important;
+          }
+          .kiosk-mode .day-header {
+            font-size: 1rem !important;
+            padding: 0.375rem !important;
+          }
+          .kiosk-mode .info-grid {
+            font-size: 0.8rem !important;
+            padding: 0.5rem !important;
+          }
+          @media screen and (max-height: 1080px) {
+            .kiosk-mode {
+              transform: scale(0.9);
+              transform-origin: top center;
+            }
+          }
+          @media screen and (max-height: 900px) {
+            .kiosk-mode {
+              transform: scale(0.8);
+              transform-origin: top center;
+            }
+          }
+          @media screen and (max-height: 768px) {
+            .kiosk-mode {
+              transform: scale(0.7);
+              transform-origin: top center;
+            }
+          }
+        `}</style>
+      )}
+      <div className={`max-w-4xl mx-auto p-4 ${isKioskMode ? 'kiosk-mode container' : ''}`}>
       <header className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Betriebskantine</h1>
         <div className="mt-4 p-4 bg-white rounded-lg shadow-sm border border-gray-100">
@@ -330,22 +408,83 @@ export default function Home() {
           </button>
         </div>
         
-        <div className="flex flex-col items-center mt-4">
-          <p className="mb-2">Speiseplan direkt auf dem Smartphone:</p>
-          <div className="p-2 bg-white rounded-lg shadow-sm">
-            <QRCodeSVG 
-              value={process.env.NEXT_PUBLIC_WEBSITE_URL || window.location.href}
-              size={100}
-              level="L"
-              includeMargin={true}
-            />
-          </div>
-        </div>
-        
-        <p>© {new Date().getFullYear()}</p>
+        {!isKioskMode && (
+          <>
+            <div className="flex flex-col items-center mt-4">
+              <p className="mb-2">Speiseplan direkt auf dem Smartphone:</p>
+              <div className="p-2 bg-white rounded-lg shadow-sm">
+                <QRCodeSVG 
+                  value={process.env.NEXT_PUBLIC_WEBSITE_URL || window.location.href}
+                  size={100}
+                  level="L"
+                  includeMargin={true}
+                />
+              </div>
+            </div>
+            
+            <p>© {new Date().getFullYear()}</p>
+          </>
+        )}
       </footer>
 
+      {/* Allergen/Addon Popup */}
+      {allergenPopup.open && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
+          <div className="bg-white rounded-lg shadow-lg p-4 w-full max-w-md">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-lg font-semibold">Allergene & Zusatzstoffe</h3>
+              <button
+                className="text-gray-500 hover:text-gray-700"
+                onClick={() => setAllergenPopup(prev => ({ ...prev, open: false }))}
+              >✕</button>
+            </div>
+            <div className="text-sm text-gray-700 mb-3">
+              <div className="font-medium">{allergenPopup.mealName}</div>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <div className="text-xs uppercase text-gray-500 mb-1">Allergene</div>
+                {allergenPopup.allergens?.length > 0 ? (
+                  <ul className="list-disc list-inside text-sm">
+                    {allergenPopup.allergens.map((code) => (
+                      <li key={`a-${code}`}>
+                        <span className="font-mono mr-1">{code}</span>
+                        {ALLERGENS[code] || ''}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <div className="text-sm text-gray-500">Keine Allergene angegeben</div>
+                )}
+              </div>
+              <div>
+                <div className="text-xs uppercase text-gray-500 mb-1">Zusatzstoffe</div>
+                {allergenPopup.additives?.length > 0 ? (
+                  <ul className="list-disc list-inside text-sm">
+                    {allergenPopup.additives.map((code) => (
+                      <li key={`z-${code}`}>
+                        <span className="font-mono mr-1">{code}</span>
+                        {ADDITIVES[code] || ''}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <div className="text-sm text-gray-500">Keine Zusatzstoffe angegeben</div>
+                )}
+              </div>
+            </div>
+            <div className="mt-4 text-right">
+              <button
+                className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+                onClick={() => setAllergenPopup(prev => ({ ...prev, open: false }))}
+              >OK</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <PrintMenu menuData={menu} />
-    </div>
+      </div>
+    </>
   );
 }

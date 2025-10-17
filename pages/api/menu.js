@@ -8,7 +8,14 @@ export default async function handler(req, res) {
   // GET: Lade aktuellen (veröffentlichten) Speiseplan
   if (req.method === 'GET') {
     try {
-      const menu = await Menu.findOne({ isPublished: true }).lean();
+      const menu = await Menu.findOne({
+        $or: [
+          { isPublished: true },              // Neue veröffentlichte Speisepläne
+          { isPublished: { $exists: false } } // Alte Speisepläne ohne isPublished Feld
+        ]
+      })
+      .sort({ year: -1, weekNumber: -1 })     // Neuestes Menü zuerst
+      .lean();
 
       if (!menu) {
         return res.status(200).json({

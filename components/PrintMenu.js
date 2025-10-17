@@ -1,4 +1,5 @@
 import { formatDate } from '../lib/dateUtils';
+import { formatCodesInline } from '../lib/allergenTaxonomy';
 
 export default function PrintMenu({ menuData }) {
   // Funktion zum Berechnen des Datums für jeden Tag
@@ -95,6 +96,11 @@ export default function PrintMenu({ menuData }) {
                       }}>
                         <span style={{ flex: 1 }}>
                           {meal.name}
+                          {(meal.allergenCodes?.length > 0 || meal.additiveCodes?.length > 0) && (
+                            <sup style={{ fontSize: '7pt', marginLeft: '4pt' }}>
+                              {formatCodesInline(meal.allergenCodes, meal.additiveCodes)}
+                            </sup>
+                          )}
                           {meal.isAction && (
                             <span style={{ 
                               fontSize: '8pt',

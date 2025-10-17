@@ -14,6 +14,7 @@ export default async function handler(req, res) {
     const menu = await Menu.findOne({
       year: parseInt(year),
       weekNumber: parseInt(week)
+      // Keine isPublished Filter - diese Route wird für Admin verwendet
     });
 
     if (!menu) {

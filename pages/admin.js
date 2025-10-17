@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Save, Loader, AlertCircle } from 'lucide-react';
+import { Save, Loader, AlertCircle, Printer } from 'lucide-react';
 import { getHolidaysForWeek } from '../lib/holidays';
 import { formatDate, getWeekNumber, getWeekDates } from '../lib/dateUtils';
+import { ALLERGENS, ADDITIVES, formatCodesInline } from '../lib/allergenTaxonomy';
 
 export default function Admin() {
   const [loading, setLoading] = useState(false);
@@ -73,10 +74,15 @@ export default function Admin() {
 
   const [holidays, setHolidays] = useState({});
 
-  const [isSending, setIsSending] = useState(false);
-  const [emailStatus, setEmailStatus] = useState('');
 
   const [analyzingMeal, setAnalyzingMeal] = useState(false);
+
+  const [allergenPopup, setAllergenPopup] = useState({
+    open: false,
+    mealName: '',
+    allergens: [],
+    additives: []
+  });
 
   const [availableMenus, setAvailableMenus] = useState([]);
   const [selectedMenu, setSelectedMenu] = useState(null);
@@ -97,6 +103,8 @@ export default function Admin() {
         
         if (data.success && data.data) {
           const menu = data.data;
+          console.log('Geladenes Menü:', menu); // Debug Log
+          console.log('isPublished Wert:', menu.isPublished); // Debug Log
           setWeekMenu(menu.days || []);
           setContactInfo(menu.contactInfo || { phone: '', postcode: '' });
           setVacationData(menu.vacation || {
@@ -105,8 +113,11 @@ export default function Admin() {
             endDate: '',
             message: 'Wir befinden uns im Urlaub.'
           });
-          setIsPublished(menu.isPublished || false);
+          // Alte Speisepläne ohne isPublished Feld als "unveröffentlicht" behandeln
+          setIsPublished(menu.isPublished === true);
         } else {
+          console.log('Kein Menü gefunden für:', selectedWeek.year, selectedWeek.week); // Debug Log
+          console.log('API Response:', data); // Debug Log
           // Wenn kein Menü gefunden wurde, setze Standardwerte
           setWeekMenu([
             { day: 'Montag', meals: [{ name: '', price: 5.00, isAction: false }, { name: '', price: 7.00, isAction: false }] },
@@ -232,94 +243,17 @@ export default function Admin() {
     }
   };
 
-  const handleEmailSend = async () => {
-    try {
-      setIsSending(true);
-      setEmailStatus('Speichere Speiseplan...');
-
-      // Zuerst den Speiseplan speichern (gleiche Logik wie handleSave)
-      const menuData = {
-        year: selectedWeek.year,
-        weekNumber: selectedWeek.week,
-        weekStart: weekDates.start,
-        weekEnd: weekDates.end,
-        days: weekMenu,
-        contactInfo: contactInfo,
-        vacation: vacationData,
-        createdAt: new Date()
-      };
-
-      const saveResponse = await fetch('/api/menu', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(menuData)
-      });
-
-      if (!saveResponse.ok) {
-        throw new Error('Fehler beim Speichern des Speiseplans');
-      }
-
-      setEmailStatus('Speiseplan gespeichert. Starte E-Mail-Versand...');
-
-      // Starte den E-Mail-Versand mit dem ersten Batch
-      await sendEmailBatches(0, 0);
-
-    } catch (error) {
-      console.error('Fehler:', error);
-      setEmailStatus(`Fehler: ${error.message}`);
-      setIsSending(false);
+  const handlePrint = () => {
+    // Prüfe ob Speiseplan veröffentlicht ist
+    if (!isPublished) {
+      alert('Der Speiseplan muss veröffentlicht sein, um gedruckt werden zu können.');
+      return;
     }
+
+    // Direkt drucken - genau wie auf der Nutzerseite
+    window.print();
   };
 
-  // Neue Funktion zum rekursiven Versenden von E-Mail-Batches
-  const sendEmailBatches = async (startBatchIndex, totalSent) => {
-    try {
-      setEmailStatus(`Versende Batch ${startBatchIndex + 1}... (${totalSent} Empfänger bisher)`);
-      
-      const emailResponse = await fetch('/api/send-menu', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          weekStart: weekDates.start,
-          weekEnd: weekDates.end,
-          weekNumber: selectedWeek.week,
-          year: selectedWeek.year,
-          startBatchIndex,
-          totalSent
-        })
-      });
-
-      if (!emailResponse.ok) {
-        const errorData = await emailResponse.json();
-        throw new Error(errorData.message || 'E-Mail-Versand fehlgeschlagen');
-      }
-
-      const result = await emailResponse.json();
-      
-      if (result.completed) {
-        // Alle Batches wurden versendet
-        setEmailStatus(`${result.message} (${result.totalSent}/${result.totalRecipients} Empfänger)`);
-        setIsSending(false);
-      } else {
-        // Es gibt noch weitere Batches zu versenden
-        setEmailStatus(`Batch ${startBatchIndex + 1} erfolgreich versendet: ${result.batches[0]?.messageId || 'OK'}. Warte vor dem nächsten Batch...`);
-        
-        // Längere Pause, um Vercel Zeit zum Atmen zu geben
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        // Nächsten Batch versenden
-        await sendEmailBatches(result.nextBatchIndex, result.totalSent);
-      }
-    } catch (error) {
-      console.error('Fehler beim Versenden der E-Mail-Batches:', error);
-      setEmailStatus(`Fehler: ${error.message}`);
-      setIsSending(false);
-    }
-  };
 
   const analyzeMeal = async (mealName) => {
     try {
@@ -342,31 +276,83 @@ export default function Admin() {
     }
   };
 
+  const analyzeMealAllergens = async (mealName) => {
+    try {
+      const response = await fetch('/api/analyze-allergens', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mealName })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Allergen-Analyse fehlgeschlagen: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      return {
+        allergens: Array.isArray(data.allergens) ? data.allergens : [],
+        additives: Array.isArray(data.additives) ? data.additives : [],
+        confidence: data.confidence || 0,
+        method: data.method || 'unknown'
+      };
+    } catch (error) {
+      console.error('Allergen-Analyse fehlgeschlagen:', error);
+      return { 
+        allergens: [], 
+        additives: [], 
+        confidence: 0, 
+        method: 'error'
+      };
+    }
+  };
+
   // Separate Analyse-Funktion für blur Event
   const handleMealBlur = async (dayIndex, mealIndex, value) => {
     if (!value.trim()) return; // Keine Analyse für leere Eingaben
     
     setAnalyzingMeal(true);
     try {
-      console.log('Analysiere Gericht:', value);
-      const icon = await analyzeMeal(value);
-      console.log('Erhaltenes Icon:', icon);
+      const [icon, allergenResult] = await Promise.all([
+        analyzeMeal(value),
+        analyzeMealAllergens(value)
+      ]);
       
       setWeekMenu(prevMenu => {
         const newMenu = [...prevMenu];
         newMenu[dayIndex].meals[mealIndex] = {
           ...newMenu[dayIndex].meals[mealIndex],
-          icon: icon
+          icon: icon,
+          allergenCodes: allergenResult.allergens,
+          additiveCodes: allergenResult.additives
         };
-        console.log('Aktualisiertes Menü:', newMenu[dayIndex].meals[mealIndex]);
         return newMenu;
       });
+      
     } catch (error) {
-      console.error('Fehler bei der Analyse:', error);
+      console.error('Analyse fehlgeschlagen:', error);
+      // Fallback: Wenigstens das Icon setzen
+      try {
+        const icon = await analyzeMeal(value);
+        if (icon) {
+          setWeekMenu(prevMenu => {
+            const newMenu = [...prevMenu];
+            newMenu[dayIndex].meals[mealIndex] = {
+              ...newMenu[dayIndex].meals[mealIndex],
+              icon: icon
+            };
+            return newMenu;
+          });
+        }
+      } catch (iconError) {
+        console.error('Auch Icon-Analyse fehlgeschlagen:', iconError);
+      }
     } finally {
       setAnalyzingMeal(false);
     }
   };
+
+
 
   // Vereinfachte handleMealChange Funktion (nur Wertänderung)
   const handleMealChange = (dayIndex, mealIndex, field, value) => {
@@ -437,13 +423,133 @@ export default function Admin() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Print-Styles für Admin-Seite */}
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          @media print {
+            body { 
+              font-family: Arial, sans-serif; 
+              margin: 0; 
+              padding: 20pt; 
+              font-size: 11pt; 
+              line-height: 1.4;
+              color: black;
+              background: white;
+            }
+            
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            
+            .print-menu-container {
+              display: block !important;
+            }
+            
+            .print-header {
+              text-align: center;
+              margin-bottom: 15pt;
+            }
+            
+            .print-title {
+              font-size: 18pt;
+              font-weight: bold;
+              margin-bottom: 10pt;
+              border-bottom: 2pt solid black;
+              padding-bottom: 6pt;
+            }
+            
+            .print-contact {
+              font-size: 10pt;
+              margin-bottom: 15pt;
+            }
+            
+            .print-day {
+              margin-bottom: 10pt;
+              break-inside: avoid;
+            }
+            
+            .print-day-title {
+              font-size: 14pt;
+              font-weight: bold;
+              margin-bottom: 5pt;
+              border-bottom: 1pt solid #666;
+              padding-bottom: 3pt;
+            }
+            
+            .print-meal {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 3pt;
+              padding: 2pt 0;
+            }
+            
+            .print-meal.action {
+              background-color: #fff3cd !important;
+              padding: 3pt 5pt;
+              border-radius: 3pt;
+              border: 1pt solid #f59e0b;
+            }
+            
+            .print-meal-name {
+              flex: 1;
+            }
+            
+            .print-meal-price {
+              min-width: 50pt;
+              text-align: right;
+              font-weight: bold;
+            }
+            
+            .print-allergen-codes {
+              font-size: 8pt;
+              color: #666;
+              margin-left: 3pt;
+            }
+            
+            .print-action-badge {
+              font-size: 8pt;
+              background-color: #fef3c7;
+              color: #92400e;
+              padding: 1pt 3pt;
+              border-radius: 2pt;
+              margin-left: 5pt;
+              border: 0.5pt solid #f59e0b;
+            }
+            
+            .print-footer {
+              margin-top: 15pt;
+              border-top: 1pt solid black;
+              padding-top: 8pt;
+              text-align: center;
+              font-size: 9pt;
+              color: #666;
+            }
+            
+            .print-vacation {
+              background-color: #fef3c7 !important;
+              border: 2pt solid #f59e0b !important;
+              padding: 10pt;
+              margin-bottom: 15pt;
+              text-align: center;
+              border-radius: 5pt;
+            }
+            
+            .print-closed {
+              font-style: italic;
+              color: #666;
+              font-size: 10pt;
+            }
+          }
+        `
+      }} />
+      
       <div className="max-w-4xl mx-auto p-4">
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex justify-between items-center mb-8 no-print">
           <h1 className="text-2xl font-bold">Menü-Verwaltung</h1>
         </div>
 
         {/* Wochenauswahl */}
-        <div className="bg-white p-6 rounded-lg shadow mb-6">
+        <div className="bg-white p-6 rounded-lg shadow mb-6 no-print">
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -483,7 +589,7 @@ export default function Admin() {
         </div>
 
         {/* Urlaubs-Toggle als kleiner Button */}
-        <div className="mb-4 flex items-center justify-end">
+        <div className="mb-4 flex items-center justify-end no-print">
           <button
             onClick={() => setVacationData(prev => ({...prev, isOnVacation: !prev.isOnVacation}))}
             className={`px-4 py-2 rounded-full text-sm font-medium flex items-center gap-2 ${
@@ -501,7 +607,7 @@ export default function Admin() {
 
         {/* Urlaubs-Einstellungen */}
         {vacationData.isOnVacation && (
-          <div className="mb-6 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+          <div className="mb-6 p-4 bg-yellow-50 rounded-lg border border-yellow-200 no-print">
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700">Von</label>
@@ -544,7 +650,7 @@ export default function Admin() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6 no-print">
           {/* Status Messages */}
           {error && (
             <div className="bg-red-50 border-l-4 border-red-400 p-4 flex items-center">
@@ -641,7 +747,7 @@ export default function Admin() {
                       {day.meals.map((meal, mealIndex) => (
                         <div key={mealIndex} className="mb-4">
                           <div className="flex items-center gap-4">
-                            <div className="flex-1">
+                            <div className="flex-1 relative">
                               <input
                                 type="text"
                                 value={meal.name}
@@ -650,6 +756,24 @@ export default function Admin() {
                                 className="w-full p-2 border rounded"
                                 placeholder="Gericht eingeben..."
                               />
+                              
+                              {/* Allergen-Anzeige */}
+                              {(meal.allergenCodes?.length > 0 || meal.additiveCodes?.length > 0) && (
+                                <button
+                                  type="button"
+                                  onClick={() => setAllergenPopup({
+                                    open: true,
+                                    mealName: meal.name,
+                                    allergens: meal.allergenCodes || [],
+                                    additives: meal.additiveCodes || []
+                                  })}
+                                  className="absolute right-2 top-1 text-xs px-1 py-0.5 bg-gray-100 border rounded hover:bg-gray-200"
+                                  title="Allergene/Zusatzstoffe anzeigen"
+                                  style={{ fontSize: '10px', lineHeight: '1' }}
+                                >
+                                  <sup>{formatCodesInline(meal.allergenCodes, meal.additiveCodes)}</sup>
+                                </button>
+                              )}
                             </div>
                             <div className="flex items-center gap-2">
                               {meal.icon && <span className="text-2xl">{meal.icon}</span>}
@@ -670,6 +794,18 @@ export default function Admin() {
                                 />
                                 <span>Aktionsessen</span>
                               </label>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (confirm('Dieses Gericht wirklich löschen?')) {
+                                    removeMeal(dayIndex, mealIndex);
+                                  }
+                                }}
+                                className="ml-2 px-2 py-1 text-sm text-red-600 hover:text-red-800 border border-red-200 rounded hover:bg-red-50"
+                                title="Gericht löschen"
+                              >
+                                Löschen
+                              </button>
                             </div>
                           </div>
                           {meal.isAction && (
@@ -700,11 +836,13 @@ export default function Admin() {
           {/* Buttons am Ende der Seite */}
           <div className="mt-8 flex gap-4 justify-end">
             <button
-              onClick={handleEmailSend}
-              disabled={isSending}
-              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:bg-gray-400"
+              onClick={handlePrint}
+              disabled={!isPublished}
+              className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 disabled:bg-gray-400 flex items-center gap-2"
+              title={!isPublished ? "Speiseplan muss veröffentlicht sein" : "Speiseplan drucken"}
             >
-              {isSending ? 'Wird versendet...' : 'Per E-Mail versenden'}
+              <Printer className="w-4 h-4" />
+              Drucken
             </button>
             
             <button
@@ -727,9 +865,137 @@ export default function Admin() {
           </div>
         </form>
 
-        {/* Status-Meldung */}
-        <div className="mt-2 text-sm">
-          {emailStatus && <p className="text-gray-600">{emailStatus}</p>}
+
+        {/* Allergen/Addon Popup */}
+        {allergenPopup.open && (
+          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
+            <div className="bg-white rounded-lg shadow-lg p-4 w-full max-w-md">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-lg font-semibold">Allergene & Zusatzstoffe</h3>
+                <button
+                  className="text-gray-500 hover:text-gray-700"
+                  onClick={() => setAllergenPopup(prev => ({ ...prev, open: false }))}
+                >✕</button>
+        </div>
+              <div className="text-sm text-gray-700 mb-3">
+                <div className="font-medium">{allergenPopup.mealName}</div>
+              </div>
+              <div className="space-y-3">
+                <div>
+                  <div className="text-xs uppercase text-gray-500 mb-1">Allergene</div>
+                  {allergenPopup.allergens?.length > 0 ? (
+                    <ul className="list-disc list-inside text-sm">
+                      {allergenPopup.allergens.map((code) => (
+                        <li key={`a-${code}`}>
+                          <span className="font-mono mr-1">{code}</span>
+                          {ALLERGENS[code] || ''}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <div className="text-sm text-gray-500">Keine Allergene erkannt</div>
+                  )}
+                </div>
+                <div>
+                  <div className="text-xs uppercase text-gray-500 mb-1">Zusatzstoffe</div>
+                  {allergenPopup.additives?.length > 0 ? (
+                    <ul className="list-disc list-inside text-sm">
+                      {allergenPopup.additives.map((code) => (
+                        <li key={`z-${code}`}>
+                          <span className="font-mono mr-1">{code}</span>
+                          {ADDITIVES[code] || ''}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <div className="text-sm text-gray-500">Keine Zusatzstoffe erkannt</div>
+                  )}
+                </div>
+              </div>
+
+              
+              <div className="mt-4 text-right">
+                <button
+                  className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+                  onClick={() => setAllergenPopup(prev => ({ ...prev, open: false }))}
+                >OK</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Versteckter Druckinhalt - nur beim Drucken sichtbar */}
+        <div className="print-only" style={{ display: 'none' }}>
+          <div className="print-header">
+            <div className="print-title">Betriebskantine</div>
+            <div className="print-contact">
+              <div><strong>Telefon:</strong> {contactInfo?.phone || ''}</div>
+              <div>Für Postfremde erhöht sich der Preis um {contactInfo?.postcode || '0.50'} €</div>
+            </div>
+          </div>
+
+          {vacationData?.isOnVacation ? (
+            <div className="print-vacation">
+              <div style={{ fontSize: '14pt', color: '#92400e', fontWeight: 'bold', marginBottom: '5pt' }}>
+                🌴 {vacationData.message} 🌴
+              </div>
+              {vacationData.startDate && vacationData.endDate && (
+                <div style={{ fontSize: '10pt', color: '#92400e' }}>
+                  Vom {new Date(vacationData.startDate).toLocaleDateString('de-DE')} bis {new Date(vacationData.endDate).toLocaleDateString('de-DE')}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div>
+              {weekMenu?.map((day, index) => {
+                const currentDate = new Date(weekDates.start);
+                currentDate.setDate(currentDate.getDate() + index);
+                
+                return (
+                  <div key={index} className="print-day">
+                    <div className="print-day-title">
+                      {day.day} ({currentDate.toLocaleDateString('de-DE')})
+                    </div>
+                    
+                    {day.isClosed ? (
+                      <div className="print-closed">
+                        {day.closedReason || 'Heute bleibt unsere Kantine geschlossen.'}
+                      </div>
+                    ) : (
+                      <div>
+                        {day.meals?.map((meal, mealIndex) => (
+                          <div 
+                            key={mealIndex} 
+                            className={`print-meal ${meal.isAction ? 'action' : ''}`}
+                          >
+                            <div className="print-meal-name">
+                              {meal.name}
+                              {(meal.allergenCodes?.length > 0 || meal.additiveCodes?.length > 0) && (
+                                <sup className="print-allergen-codes">
+                                  {formatCodesInline(meal.allergenCodes, meal.additiveCodes)}
+                                </sup>
+                              )}
+                              {meal.isAction && (
+                                <span className="print-action-badge">Aktionsessen</span>
+                              )}
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4pt' }}>
+                              {meal.icon && <span style={{ fontSize: '12pt' }}>{meal.icon}</span>}
+                              <span className="print-meal-price">{meal.price.toFixed(2)} €</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          <div className="print-footer">
+            <div>Bei Fragen zu Inhaltsstoffen und Allergenen kontaktieren Sie uns bitte unter: {contactInfo?.phone || ''}</div>
+          </div>
         </div>
       </div>
     </div>

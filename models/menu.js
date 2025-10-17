@@ -17,6 +17,14 @@ const MealSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  allergenCodes: {
+    type: [String],
+    default: []
+  },
+  additiveCodes: {
+    type: [String],
+    default: []
+  },
   isAction: {
     type: Boolean,
     default: false
