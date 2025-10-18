@@ -402,24 +402,24 @@ export default function Home() {
             </div>
           </div>
         ) : (
-          /* Normaler Modus: Logo links, Hauptinhalt nach rechts verschoben */
-          <div className="flex items-start gap-4">
-            {/* Logo links */}
+          /* Normaler Modus: Logo links, Hauptinhalt rechts - professionell und symmetrisch */
+          <div className="flex items-center gap-6 mb-8">
+            {/* Logo links - größer für bessere Proportionen */}
             <div className="flex-shrink-0">
               <img 
                 src="/logo.png" 
                 alt="Rainer Westermann Kantine" 
-                className="h-24 w-auto"
+                className="h-32 w-auto"
               />
             </div>
-            {/* Hauptinhalt rechts - verschoben */}
+            {/* Hauptinhalt rechts - Titel in den Info-Block integriert */}
             <div className="flex-1">
-              <h1 className="text-3xl font-bold text-gray-900">Betriebskantine</h1>
-              <div className="mt-4 p-4 bg-white rounded-lg shadow-sm border border-gray-100">
-                <div className="grid grid-cols-2 gap-4">
+              <div className="p-6 bg-white rounded-lg shadow-sm border border-gray-100">
+                <h1 className="text-3xl font-bold text-gray-900 mb-6 text-center">Betriebskantine</h1>
+                <div className="grid grid-cols-2 gap-6">
                   {/* Linke Spalte: Öffnungszeiten */}
                   <div>
-                    <h2 className="text-lg font-semibold text-gray-800 mb-2">Öffnungszeiten</h2>
+                    <h2 className="text-lg font-semibold text-gray-800 mb-3">Öffnungszeiten</h2>
                     <div className="flex space-x-8">
                       <div>
                         <span className="text-gray-600 font-medium">Frühstück</span>
@@ -433,9 +433,10 @@ export default function Home() {
                   </div>
                   
                   {/* Rechte Spalte: Kontaktinfo */}
-                  <div className="text-right mt-8">
-                    <p className="text-gray-600">Telefon: {menu.contactInfo?.phone}</p>
-                    <p className="text-gray-600 mt-2">Für Postfremde erhöht sich der Preis um {menu.contactInfo?.postcode} €</p>
+                  <div>
+                    <h2 className="text-lg font-semibold text-gray-800 mb-3">Kontakt</h2>
+                    <p className="text-gray-800">Telefon: {menu.contactInfo?.phone}</p>
+                    <p className="text-gray-600 text-sm mt-2">Für Postfremde erhöht sich der Preis um {menu.contactInfo?.postcode} €</p>
                   </div>
                 </div>
               </div>
