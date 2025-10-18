@@ -362,25 +362,46 @@ export default function Home() {
           }
         `}</style>
       )}
-      <div className={`max-w-4xl mx-auto p-4 ${isKioskMode ? 'kiosk-mode container' : ''}`}>
-      <header className={`${isKioskMode ? 'mb-4' : 'mb-8'}`}>
-        <h1 className="text-3xl font-bold text-gray-900">Betriebskantine</h1>
-        <div className={`${isKioskMode ? 'mt-2 p-2' : 'mt-4 p-4'} bg-white rounded-lg shadow-sm border border-gray-100`}>
+      <div className={`max-w-4xl mx-auto p-4 ${isKioskMode ? 'kiosk-mode container' : ''}`} style={{
+        background: 'linear-gradient(135deg, #fefcf8 0%, #f5f1e8 100%)',
+        minHeight: '100vh'
+      }}>
+      <header className={`${isKioskMode ? 'mb-4' : 'mb-8'} relative`}>
+        <div className="flex items-center justify-between">
+          <div className="flex-1">
+            <h1 className="text-3xl font-bold text-gray-900 text-right">Speiseplan</h1>
+          </div>
+          <div className="ml-4">
+            <img 
+              src="/logo.png" 
+              alt="Rainer Westermann Kantine" 
+              className="h-16 w-auto"
+              style={{
+                filter: 'drop-shadow(2px 2px 4px rgba(0,0,0,0.1))'
+              }}
+            />
+          </div>
+        </div>
+        <div className={`${isKioskMode ? 'mt-2 p-2' : 'mt-4 p-4'} bg-white rounded-lg shadow-sm border border-gray-100`} style={{
+          maxWidth: isKioskMode ? '70%' : '100%',
+          marginLeft: isKioskMode ? '0' : 'auto',
+          marginRight: isKioskMode ? '0' : 'auto'
+        }}>
           {isKioskMode ? (
             /* Kiosk-Modus: Kompakte horizontale Anordnung */
             <div className="text-center">
-              <div className="flex justify-center items-center space-x-8 text-sm">
-                <div className="flex items-center space-x-2">
+              <div className="flex justify-center items-center space-x-6 text-sm">
+                <div className="flex items-center space-x-1">
                   <span className="text-gray-600 font-medium">Frühstück:</span>
-                  <span className="text-gray-800">07:00 - 10:00</span>
+                  <span className="text-gray-800">07:00-10:00</span>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-1">
                   <span className="text-gray-600 font-medium">Mittagstisch:</span>
-                  <span className="text-gray-800">11:30 - 14:00</span>
+                  <span className="text-gray-800">11:30-14:00</span>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-1">
                   <span className="text-gray-600 font-medium">Postfremde:</span>
-                  <span className="text-gray-800">+{menu.contactInfo?.postcode} €</span>
+                  <span className="text-gray-800">+{menu.contactInfo?.postcode}€</span>
                 </div>
               </div>
             </div>
