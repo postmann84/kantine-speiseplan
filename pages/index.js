@@ -402,34 +402,45 @@ export default function Home() {
             </div>
           </div>
         ) : (
-          /* Normaler Modus: Original */
-          <>
-            <h1 className="text-3xl font-bold text-gray-900">Betriebskantine</h1>
-            <div className="mt-4 p-4 bg-white rounded-lg shadow-sm border border-gray-100">
-              <div className="grid grid-cols-2 gap-4">
-                {/* Linke Spalte: Öffnungszeiten */}
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-800 mb-2">Öffnungszeiten</h2>
-                  <div className="flex space-x-8">
-                    <div>
-                      <span className="text-gray-600 font-medium">Frühstück</span>
-                      <p className="text-gray-800">07:00 - 10:00 Uhr</p>
-                    </div>
-                    <div>
-                      <span className="text-gray-600 font-medium">Mittagstisch</span>
-                      <p className="text-gray-800">11:30 - 14:00 Uhr</p>
+          /* Normaler Modus: Logo links, Hauptinhalt nach rechts verschoben */
+          <div className="flex items-start gap-4">
+            {/* Logo links */}
+            <div className="flex-shrink-0">
+              <img 
+                src="/logo.png" 
+                alt="Rainer Westermann Kantine" 
+                className="h-16 w-auto"
+              />
+            </div>
+            {/* Hauptinhalt rechts - verschoben */}
+            <div className="flex-1">
+              <h1 className="text-3xl font-bold text-gray-900">Betriebskantine</h1>
+              <div className="mt-4 p-4 bg-white rounded-lg shadow-sm border border-gray-100">
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Linke Spalte: Öffnungszeiten */}
+                  <div>
+                    <h2 className="text-lg font-semibold text-gray-800 mb-2">Öffnungszeiten</h2>
+                    <div className="flex space-x-8">
+                      <div>
+                        <span className="text-gray-600 font-medium">Frühstück</span>
+                        <p className="text-gray-800">07:00 - 10:00 Uhr</p>
+                      </div>
+                      <div>
+                        <span className="text-gray-600 font-medium">Mittagstisch</span>
+                        <p className="text-gray-800">11:30 - 14:00 Uhr</p>
+                      </div>
                     </div>
                   </div>
-                </div>
-                
-                {/* Rechte Spalte: Kontaktinfo */}
-                <div className="text-right mt-8">
-                  <p className="text-gray-600">Telefon: {menu.contactInfo?.phone}</p>
-                  <p className="text-gray-600 mt-2">Für Postfremde erhöht sich der Preis um {menu.contactInfo?.postcode} €</p>
+                  
+                  {/* Rechte Spalte: Kontaktinfo */}
+                  <div className="text-right mt-8">
+                    <p className="text-gray-600">Telefon: {menu.contactInfo?.phone}</p>
+                    <p className="text-gray-600 mt-2">Für Postfremde erhöht sich der Preis um {menu.contactInfo?.postcode} €</p>
+                  </div>
                 </div>
               </div>
             </div>
-          </>
+          </div>
         )}
       </header>
 
