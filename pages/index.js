@@ -15,7 +15,12 @@ export default function Home() {
   const [allergenPopup, setAllergenPopup] = useState({ open: false, mealName: '', allergens: [], additives: [] });
   
   // Kiosk-Modus für Monitor-Anzeige
-  const isKioskMode = router.isReady && router.query.kiosk === 'true';
+  const isKioskMode = router.query.kiosk === 'true';
+  
+  // Debug-Log für Kiosk-Modus
+  useEffect(() => {
+    console.log('Kiosk-Modus:', isKioskMode, 'Query:', router.query);
+  }, [isKioskMode, router.query]);
 
   // Prüft ob ein Datum im aktiven Urlaubszeitraum liegt
   const isDateInVacation = (date, vacation) => {
