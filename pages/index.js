@@ -409,7 +409,7 @@ export default function Home() {
               <img 
                 src="/logo.png" 
                 alt="Rainer Westermann Kantine" 
-                className="h-16 w-auto"
+                className="h-24 w-auto"
               />
             </div>
             {/* Hauptinhalt rechts - verschoben */}
