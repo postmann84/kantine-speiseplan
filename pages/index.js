@@ -403,13 +403,13 @@ export default function Home() {
           </div>
         ) : (
           /* Normaler Modus: Logo links, Hauptinhalt rechts - professionell und symmetrisch */
-          <div className="flex items-center gap-6 mb-8">
-            {/* Logo links - größer für bessere Proportionen */}
+          <div className="flex items-center gap-8 mb-8">
+            {/* Logo links - deutlich größer für professionelle Präsenz */}
             <div className="flex-shrink-0">
               <img 
                 src="/logo.png" 
                 alt="Rainer Westermann Kantine" 
-                className="h-32 w-auto"
+                className="h-40 w-auto"
               />
             </div>
             {/* Hauptinhalt rechts - Titel in den Info-Block integriert */}
