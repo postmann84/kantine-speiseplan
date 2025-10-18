@@ -373,7 +373,7 @@ export default function Home() {
       } : {}}>
       <header className={`${isKioskMode ? 'mb-4' : 'mb-8'} ${isKioskMode ? 'relative' : ''}`}>
         {isKioskMode ? (
-          /* Kiosk-Modus: Logo links, Speiseplan mittig-rechts, Öffnungszeiten rechts */
+          /* Kiosk-Modus: Logo links, Öffnungszeiten rechts */
           <div className="flex items-center justify-between p-2 bg-white rounded-lg shadow-sm border border-gray-100">
             {/* Logo on the left */}
             <div className="flex-shrink-0">
@@ -383,11 +383,7 @@ export default function Home() {
                 className="h-16 w-auto"
               />
             </div>
-            {/* Speiseplan title, taking available space and aligned right */}
-            <div className="flex-1 text-right mr-4">
-              <h1 className="text-3xl font-bold text-gray-900">Speiseplan</h1>
-            </div>
-            {/* Opening hours on the far right */}
+            {/* Opening hours on the right */}
             <div className="flex-shrink-0">
               <div className="flex items-center space-x-4 text-sm">
                 <div className="flex items-center space-x-1">
