@@ -373,19 +373,19 @@ export default function Home() {
       } : {}}>
       <header className={`${isKioskMode ? 'mb-4' : 'mb-8'} ${isKioskMode ? 'relative' : ''}`}>
         {isKioskMode ? (
-          /* Kiosk-Modus: Logo links, Öffnungszeiten rechts */
-          <div className="flex items-center justify-between p-2 bg-white rounded-lg shadow-sm border border-gray-100">
+          /* Kiosk-Modus: Responsive Layout - Logo links, Öffnungszeiten rechts */
+          <div className="flex flex-col sm:flex-row items-center justify-between p-2 bg-white rounded-lg shadow-sm border border-gray-100 gap-2 sm:gap-0">
             {/* Logo on the left */}
             <div className="flex-shrink-0">
               <img 
                 src="/logo.png" 
                 alt="Rainer Westermann Kantine" 
-                className="h-16 w-auto"
+                className="h-12 sm:h-16 w-auto"
               />
             </div>
-            {/* Opening hours on the right */}
+            {/* Opening hours on the right - responsive */}
             <div className="flex-shrink-0">
-              <div className="flex items-center space-x-4 text-sm">
+              <div className="flex flex-col sm:flex-row items-center space-y-1 sm:space-y-0 sm:space-x-4 text-xs sm:text-sm">
                 <div className="flex items-center space-x-1">
                   <span className="text-gray-600 font-medium">Frühstück:</span>
                   <span className="text-gray-800">07:00-10:00</span>
