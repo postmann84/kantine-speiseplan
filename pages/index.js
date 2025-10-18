@@ -368,7 +368,7 @@ export default function Home() {
         `}</style>
       )}
       <div className={`max-w-4xl mx-auto p-4 ${isKioskMode ? 'kiosk-mode container' : ''}`} style={isKioskMode ? {
-        background: 'linear-gradient(135deg, #fefcf8 0%, #f5f1e8 100%)',
+        background: 'white',
         minHeight: '100vh'
       } : {}}>
       <header className={`${isKioskMode ? 'mb-4' : 'mb-8'} ${isKioskMode ? 'relative' : ''}`}>
@@ -383,9 +383,6 @@ export default function Home() {
                 src="/logo.png" 
                 alt="Rainer Westermann Kantine" 
                 className="h-16 w-auto"
-                style={{
-                  filter: 'drop-shadow(2px 2px 4px rgba(0,0,0,0.1))'
-                }}
               />
             </div>
           </div>
