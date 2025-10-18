@@ -373,17 +373,17 @@ export default function Home() {
       } : {}}>
       <header className={`${isKioskMode ? 'mb-4' : 'mb-8'} ${isKioskMode ? 'relative' : ''}`}>
         {isKioskMode ? (
-          /* Kiosk-Modus: Logo und Speiseplan */
+          /* Kiosk-Modus: Logo links und Speiseplan rechts */
           <div className="flex items-center justify-between">
-            <div className="flex-1">
-              <h1 className="text-3xl font-bold text-gray-900 text-right">Speiseplan</h1>
-            </div>
-            <div className="ml-4">
+            <div className="flex-shrink-0">
               <img 
                 src="/logo.png" 
                 alt="Rainer Westermann Kantine" 
-                className="h-16 w-auto"
+                className="h-12 w-auto"
               />
+            </div>
+            <div className="flex-1">
+              <h1 className="text-3xl font-bold text-gray-900 text-right">Speiseplan</h1>
             </div>
           </div>
         ) : (
