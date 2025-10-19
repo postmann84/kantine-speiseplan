@@ -412,31 +412,31 @@ export default function Home() {
                 className="h-36 w-auto"
               />
             </div>
-            {/* Hauptinhalt rechts - Titel in den Info-Block integriert */}
+            {/* Hauptinhalt rechts - kompakter Info-Block */}
             <div className="flex-1">
-              <div className="p-6 bg-white rounded-lg shadow-sm border border-gray-100">
-                <h1 className="text-3xl font-bold text-gray-900 mb-6 text-center">Betriebskantine</h1>
-                <div className="grid grid-cols-2 gap-6">
+              <div className="p-4 bg-white rounded-lg shadow-sm border border-gray-100 h-36 flex flex-col justify-center">
+                <h1 className="text-2xl font-bold text-gray-900 mb-3 text-center">Speiseplan</h1>
+                <div className="grid grid-cols-2 gap-4">
                   {/* Linke Spalte: Öffnungszeiten */}
                   <div>
-                    <h2 className="text-lg font-semibold text-gray-800 mb-3">Öffnungszeiten</h2>
-                    <div className="flex space-x-8">
+                    <h2 className="text-sm font-semibold text-gray-800 mb-1">Öffnungszeiten</h2>
+                    <div className="flex space-x-4 text-xs">
                       <div>
-                        <span className="text-gray-600 font-medium">Frühstück</span>
-                        <p className="text-gray-800">07:00 - 10:00 Uhr</p>
+                        <span className="text-gray-600 font-medium">Frühstück:</span>
+                        <span className="text-gray-800 ml-1">07:00-10:00</span>
                       </div>
                       <div>
-                        <span className="text-gray-600 font-medium">Mittagstisch</span>
-                        <p className="text-gray-800">11:30 - 14:00 Uhr</p>
+                        <span className="text-gray-600 font-medium">Mittagstisch:</span>
+                        <span className="text-gray-800 ml-1">11:30-14:00</span>
                       </div>
                     </div>
                   </div>
                   
                   {/* Rechte Spalte: Kontaktinfo */}
                   <div>
-                    <h2 className="text-lg font-semibold text-gray-800 mb-3">Kontakt</h2>
-                    <p className="text-gray-800">Telefon: {menu.contactInfo?.phone}</p>
-                    <p className="text-gray-600 text-sm mt-2">Für Postfremde erhöht sich der Preis um {menu.contactInfo?.postcode} €</p>
+                    <h2 className="text-sm font-semibold text-gray-800 mb-1">Kontakt</h2>
+                    <p className="text-gray-800 text-xs">Telefon: {menu.contactInfo?.phone}</p>
+                    <p className="text-gray-600 text-xs mt-1">Für Postfremde +{menu.contactInfo?.postcode}€</p>
                   </div>
                 </div>
               </div>
