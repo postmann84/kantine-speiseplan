@@ -414,7 +414,7 @@ export default function Home() {
             </div>
             {/* Hauptinhalt rechts - kompakter Info-Block */}
             <div className="flex-1">
-              <div className="p-4 bg-white rounded-lg shadow-sm border border-gray-100 h-36 flex flex-col justify-center">
+              <div className="p-4 bg-white rounded-lg shadow-sm border border-gray-100 h-44 flex flex-col justify-center">
                 <h1 className="text-2xl font-bold text-gray-900 mb-3 text-center">Speiseplan</h1>
                 <div className="grid grid-cols-2 gap-4">
                   {/* Linke Spalte: Öffnungszeiten */}
