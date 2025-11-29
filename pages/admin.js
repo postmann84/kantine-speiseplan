@@ -807,22 +807,78 @@ export default function Admin() {
                                 placeholder="Gericht eingeben..."
                               />
                               
-                              {/* Allergen-Anzeige */}
-                              {(meal.allergenCodes?.length > 0 || meal.additiveCodes?.length > 0) && (
-                                <button
-                                  type="button"
-                                  onClick={() => setAllergenPopup({
-                                    open: true,
-                                    mealName: meal.name,
-                                    allergens: meal.allergenCodes || [],
-                                    additives: meal.additiveCodes || []
-                                  })}
-                                  className="absolute right-2 top-1 text-xs px-1 py-0.5 bg-gray-100 border rounded hover:bg-gray-200"
-                                  title="Allergene/Zusatzstoffe anzeigen"
-                                  style={{ fontSize: '10px', lineHeight: '1' }}
-                                >
-                                  <sup>{formatCodesInline(meal.allergenCodes, meal.additiveCodes)}</sup>
-                                </button>
+                              {/* Allergen-Anzeige mit Status-Indikator */}
+                              {meal.name && meal.name.trim().length > 0 && (
+                                <div className="absolute right-2 top-1 flex items-center gap-1">
+                                  {/* Warnung wenn keine Kennzeichnungen */}
+                                  {(!meal.allergenCodes || meal.allergenCodes.length === 0) && 
+                                   (!meal.additiveCodes || meal.additiveCodes.length === 0) && (
+                                    <span 
+                                      className="text-xs px-1 py-0.5 bg-yellow-100 text-yellow-800 border border-yellow-300 rounded"
+                                      title="⚠️ Keine Kennzeichnungen - wird beim Speichern automatisch analysiert"
+                                    >
+                                      ⚠️
+                                    </span>
+                                  )}
+                                  
+                                  {/* Codes anzeigen wenn vorhanden */}
+                                  {(meal.allergenCodes?.length > 0 || meal.additiveCodes?.length > 0) && (
+                                    <button
+                                      type="button"
+                                      onClick={() => setAllergenPopup({
+                                        open: true,
+                                        mealName: meal.name,
+                                        allergens: meal.allergenCodes || [],
+                                        additives: meal.additiveCodes || []
+                                      })}
+                                      className="text-xs px-1 py-0.5 bg-green-100 text-green-800 border border-green-300 rounded hover:bg-green-200"
+                                      title="✓ Gekennzeichnet - Klicken zum Anzeigen"
+                                      style={{ fontSize: '10px', lineHeight: '1' }}
+                                    >
+                                      <sup>{formatCodesInline(meal.allergenCodes, meal.additiveCodes)}</sup>
+                                    </button>
+                                  )}
+                                  
+                                  {/* Manuelle Re-Analyse Button */}
+                                  {meal.name && meal.name.trim().length > 0 && (
+                                    <button
+                                      type="button"
+                                      onClick={async () => {
+                                        setAnalyzingMeal(true);
+                                        try {
+                                          const response = await fetch('/api/analyze-allergens-v2', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({ mealName: meal.name })
+                                          });
+                                          
+                                          if (response.ok) {
+                                            const result = await response.json();
+                                            setWeekMenu(prevMenu => {
+                                              const newMenu = [...prevMenu];
+                                              newMenu[dayIndex].meals[mealIndex] = {
+                                                ...newMenu[dayIndex].meals[mealIndex],
+                                                allergenCodes: result.allergens || [],
+                                                additiveCodes: result.additives || []
+                                              };
+                                              return newMenu;
+                                            });
+                                            alert(`✅ ${result.allergens?.length || 0} Allergene und ${result.additives?.length || 0} Zusatzstoffe erkannt`);
+                                          }
+                                        } catch (error) {
+                                          alert('❌ Analyse fehlgeschlagen');
+                                        } finally {
+                                          setAnalyzingMeal(false);
+                                        }
+                                      }}
+                                      className="text-xs px-1 py-0.5 bg-blue-100 text-blue-800 border border-blue-300 rounded hover:bg-blue-200"
+                                      title="Erneut analysieren"
+                                      disabled={analyzingMeal}
+                                    >
+                                      🔄
+                                    </button>
+                                  )}
+                                </div>
                               )}
                             </div>
                             <div className="flex items-center gap-2">
