@@ -204,12 +204,57 @@ export default function Admin() {
     });
   };
 
-  // Angepasster handleSubmit
+  // Angepasster handleSubmit mit Auto-Analyse für fehlende Kennzeichnungen
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
     setSuccess(false);
+
+    // NEUE FUNKTION: Analysiere alle Gerichte ohne Kennzeichnungen VOR dem Speichern
+    const updatedWeekMenu = [...weekMenu];
+    let analyzedCount = 0;
+    
+    for (let dayIndex = 0; dayIndex < updatedWeekMenu.length; dayIndex++) {
+      const day = updatedWeekMenu[dayIndex];
+      if (day.isClosed) continue;
+      
+      for (let mealIndex = 0; mealIndex < day.meals.length; mealIndex++) {
+        const meal = day.meals[mealIndex];
+        
+        // Prüfe ob Gericht einen Namen hat aber keine Kennzeichnungen
+        const hasName = meal.name && meal.name.trim().length > 0;
+        const hasNoAllergens = !meal.allergenCodes || meal.allergenCodes.length === 0;
+        const hasNoAdditives = !meal.additiveCodes || meal.additiveCodes.length === 0;
+        
+        if (hasName && hasNoAllergens && hasNoAdditives) {
+          console.log(`🔄 Auto-Analyse für: ${meal.name}`);
+          
+          try {
+            const response = await fetch('/api/analyze-allergens-v2', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ mealName: meal.name })
+            });
+            
+            if (response.ok) {
+              const result = await response.json();
+              updatedWeekMenu[dayIndex].meals[mealIndex].allergenCodes = result.allergens || [];
+              updatedWeekMenu[dayIndex].meals[mealIndex].additiveCodes = result.additives || [];
+              analyzedCount++;
+              console.log(`✅ Auto-Analyse erfolgreich: ${result.allergens.length} Allergene, ${result.additives.length} Zusatzstoffe`);
+            }
+          } catch (error) {
+            console.error('Auto-Analyse fehlgeschlagen für:', meal.name, error);
+          }
+        }
+      }
+    }
+    
+    if (analyzedCount > 0) {
+      console.log(`✅ ${analyzedCount} Gerichte automatisch analysiert`);
+      setWeekMenu(updatedWeekMenu);
+    }
 
     const menuData = {
       year: selectedWeek.year,
@@ -217,7 +262,7 @@ export default function Admin() {
       weekStart: weekDates.start,
       weekEnd: weekDates.end,
       isPublished,
-      days: weekMenu,
+      days: updatedWeekMenu,
       contactInfo,
       vacation: vacationData
     };
@@ -236,6 +281,11 @@ export default function Admin() {
       }
 
       setSuccess(true);
+      
+      // Zeige Erfolgsmeldung mit Info über Auto-Analysen
+      if (analyzedCount > 0) {
+        alert(`✅ Speiseplan gespeichert!\n${analyzedCount} Gerichte wurden automatisch mit Allergenen/Zusatzstoffen gekennzeichnet.`);
+      }
     } catch (err) {
       setError(err.message);
     } finally {
