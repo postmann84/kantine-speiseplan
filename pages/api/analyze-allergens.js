@@ -70,22 +70,34 @@ function levenshteinDistance(str1, str2) {
 }
 
 export default async function handler(req, res) {
+  // Redirect to new improved API
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
     const { mealName } = req.body;
-    if (!mealName || typeof mealName !== 'string') {
-      return res.status(400).json({ error: 'mealName ist erforderlich' });
-    }
-
-    const analysisResult = await analyzeAllergens(mealName);
-    console.log('Analysis Result:', JSON.stringify(analysisResult, null, 2));
-    return res.status(200).json(analysisResult);
+    
+    // Call the new improved API internally
+    const apiUrl = `${req.headers['x-forwarded-proto'] || 'http'}://${req.headers.host}/api/analyze-allergens-v2`;
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mealName })
+    });
+    
+    const result = await response.json();
+    return res.status(response.status).json(result);
   } catch (error) {
     console.error('Fehler bei der Allergen-Analyse:', error);
-    return res.status(500).json({ error: 'Analyse fehlgeschlagen' });
+    
+    // Fallback to old implementation if new one fails
+    try {
+      const analysisResult = await analyzeAllergens(mealName || req.body?.mealName);
+      return res.status(200).json(analysisResult);
+    } catch (fallbackError) {
+      return res.status(500).json({ error: 'Analyse fehlgeschlagen' });
+    }
   }
 }
 
