@@ -1,8 +1,10 @@
-# 🎅 Weihnachtsmann-Animation zur Weihnachtswoche
+# 🎅 Weihnachtsmann-Animation zu den Weihnachtswochen
 
 ## 📋 Übersicht
 
-Eine animierte Weihnachtsmann-Animation, die während der **gesamten Woche mit dem 24. Dezember** über den Bildschirm der öffentlichen Kundenseite fliegt, wenn der Speiseplan für diese Woche veröffentlicht ist.
+Eine animierte Weihnachtsmann-Animation, die während **ZWEI Wochen** über den Bildschirm der öffentlichen Kundenseite fliegt:
+- **KW 51**: 15.12. - 19.12. (Vorweihnachtswoche)
+- **KW 52**: 23.12. - 29.12. (Weihnachtswoche mit 24.12.)
 
 ---
 
