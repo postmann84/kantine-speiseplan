@@ -632,7 +632,7 @@ export default function Home() {
             }
             
             .santa-video {
-              height: 120px;
+              height: 240px; /* Doppelt so groß: 240px statt 120px */
               width: auto;
               /* Transparenter Hintergrund */
               background: transparent !important;
@@ -644,14 +644,14 @@ export default function Home() {
             
             /* Fallback für GIF-Bild */
             .santa-video img {
-              height: 120px;
+              height: 240px; /* Doppelt so groß: 240px statt 120px */
               width: auto;
               background: transparent;
             }
             
             @media (max-width: 768px) {
               .santa-video {
-                height: 80px;
+                height: 160px; /* Doppelt so groß: 160px statt 80px */
               }
               
               .santa-container {
