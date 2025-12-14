@@ -110,13 +110,10 @@ export default function Home() {
     if (christmas >= weekStart && christmas <= weekEnd) {
       console.log('🎅 Weihnachtsmann-Animation wird aktiviert!');
       console.log(`✅ Veröffentlichte Woche: ${weekStart.toISOString().split('T')[0]} bis ${weekEnd.toISOString().split('T')[0]}`);
-      console.log(`🎄 Diese Woche enthält den 24.12. → Animation läuft die ganze Woche!`);
+      console.log(`🎄 Diese Woche enthält den 24.12. → Animation läuft als Dauerschleife!`);
       setShowSanta(true);
       
-      // Nach 15 Sekunden ausblenden (Animation läuft 2x komplett durch)
-      setTimeout(() => {
-        setShowSanta(false);
-      }, 15000);
+      // KEINE Zeitbegrenzung mehr - Animation läuft kontinuierlich!
     } else {
       console.log(`❌ 24.12. liegt nicht in der veröffentlichten Woche (${weekStart.toISOString().split('T')[0]} bis ${weekEnd.toISOString().split('T')[0]})`);
     }
