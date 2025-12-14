@@ -578,6 +578,59 @@ export default function Home() {
         </div>
       )}
 
+      {/* Weihnachtsmann-Animation am 24.12. */}
+      {showSanta && (
+        <>
+          <style jsx>{`
+            @keyframes santaFly {
+              0% {
+                left: -200px;
+              }
+              100% {
+                left: 100%;
+              }
+            }
+            
+            .santa-container {
+              position: fixed;
+              bottom: 20%;
+              left: -200px;
+              z-index: 9999;
+              pointer-events: none;
+              animation: santaFly 7s linear infinite;
+            }
+            
+            .santa-video {
+              height: 120px;
+              width: auto;
+              filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
+            }
+            
+            @media (max-width: 768px) {
+              .santa-video {
+                height: 80px;
+              }
+              
+              .santa-container {
+                bottom: 10%;
+              }
+            }
+          `}</style>
+          
+          <div className="santa-container">
+            <video 
+              className="santa-video"
+              autoPlay 
+              loop 
+              muted
+              playsInline
+            >
+              <source src="/santa-animation.mp4" type="video/mp4" />
+            </video>
+          </div>
+        </>
+      )}
+
       <PrintMenu menuData={menu} />
       </div>
     </>
