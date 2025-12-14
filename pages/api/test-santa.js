@@ -66,7 +66,12 @@ export default async function handler(req, res) {
         !checks.isChristmasEve && `Heute ist nicht der 24.12. (heute: ${checks.todayDate})`,
         checks.hasMenu && checks.isPublished && !checks.weekContainsChristmas && 
           `Die Woche (${checks.weekStart} bis ${checks.weekEnd}) enthält nicht den 24.12.`
-      ].filter(Boolean) : []
+      ].filter(Boolean) : [],
+      testMode: {
+        info: 'Um die Animation JETZT zu testen (vor dem 24.12.):',
+        url: '/?testSanta=true',
+        description: 'Öffnen Sie die Startseite mit diesem Parameter, um die Datumsprüfung zu überspringen'
+      }
     });
 
   } catch (error) {
