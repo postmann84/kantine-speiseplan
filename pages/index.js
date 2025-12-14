@@ -764,32 +764,3 @@ export default function Home() {
     </>
   );
 }
-          
-          <div className="santa-container">
-            {/* Prüfe ob WebM (mit Transparenz) verfügbar ist, sonst MP4 */}
-            <video 
-              className="santa-video"
-              autoPlay 
-              loop 
-              muted
-              playsInline
-              style={{ background: 'transparent' }}
-            >
-              {/* WebM mit Alpha-Kanal (Transparenz) - BESTE OPTION */}
-              <source src="/santa-animation.webm" type="video/webm" />
-              
-              {/* Fallback auf MP4 falls WebM nicht verfügbar */}
-              <source src="/santa-animation.mp4" type="video/mp4" />
-              
-              {/* Fallback auf GIF falls Video nicht unterstützt wird */}
-              <img src="/santa-animation.gif" alt="Weihnachtsmann Animation" />
-            </video>
-          </div>
-        </>
-      )}
-
-      <PrintMenu menuData={menu} />
-      </div>
-    </>
-  );
-}
