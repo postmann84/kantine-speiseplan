@@ -25,26 +25,30 @@ export default async function handler(req, res) {
     const checks = {
       hasMenu: menuData.success && menuData.data !== null,
       isPublished: menuData.data?.isPublished || false,
-      weekContainsChristmas: false,
+      weekContainsDec15: false,
+      weekContainsDec24: false,
       todayDate: `${day}.${month}.${year}`,
       weekStart: null,
       weekEnd: null,
       shouldShowSanta: false,
-      note: 'Animation läuft die GESAMTE Woche, nicht nur am 24.12.!'
+      note: 'Animation läuft in ZWEI Wochen: 15.-19.12. (KW 51) UND 23.-29.12. (KW 52)'
     };
 
     if (checks.hasMenu && checks.isPublished) {
       const weekStart = new Date(menuData.data.weekStart);
       const weekEnd = new Date(menuData.data.weekEnd);
-      const christmas = new Date(year, 11, 24); // 11 = Dezember
+      const dec15 = new Date(year, 11, 15); // 15. Dezember
+      const dec24 = new Date(year, 11, 24); // 24. Dezember
       
       weekStart.setHours(0, 0, 0, 0);
       weekEnd.setHours(23, 59, 59, 999);
-      christmas.setHours(12, 0, 0, 0);
+      dec15.setHours(0, 0, 0, 0);
+      dec24.setHours(12, 0, 0, 0);
       
       checks.weekStart = weekStart.toISOString().split('T')[0];
       checks.weekEnd = weekEnd.toISOString().split('T')[0];
-      checks.weekContainsChristmas = christmas >= weekStart && christmas <= weekEnd;
+      checks.weekContainsDec15 = dec15 >= weekStart && dec15 <= weekEnd;
+      checks.weekContainsDec24 = dec24 >= weekStart && dec24 <= weekEnd;
     }
 
     // Finale Entscheidung (kein Datumscheck mehr!)
