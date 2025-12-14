@@ -624,6 +624,7 @@ export default function Home() {
               loop 
               muted
               playsInline
+              style={{ background: 'transparent' }}
             >
               <source src="/santa-animation.mp4" type="video/mp4" />
             </video>
