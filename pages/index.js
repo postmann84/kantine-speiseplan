@@ -601,9 +601,11 @@ export default function Home() {
               height: 120px;
               width: auto;
               /* Transparenter Hintergrund - entfernt Kacheln */
-              background: transparent;
-              mix-blend-mode: normal;
-              /* Entferne drop-shadow um Hintergrund besser transparent zu machen */
+              background: transparent !important;
+              /* Mix-Blend-Mode um helle Hintergründe zu entfernen */
+              mix-blend-mode: multiply;
+              /* Erhöhe Kontrast um Hintergrund auszublenden */
+              filter: contrast(1.2) brightness(1.1);
             }
             
             @media (max-width: 768px) {
