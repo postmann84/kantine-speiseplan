@@ -23,12 +23,12 @@ export default async function handler(req, res) {
     const checks = {
       hasMenu: menuData.success && menuData.data !== null,
       isPublished: menuData.data?.isPublished || false,
-      isChristmasEve: day === 24 && month === 12,
       weekContainsChristmas: false,
       todayDate: `${day}.${month}.${year}`,
       weekStart: null,
       weekEnd: null,
-      shouldShowSanta: false
+      shouldShowSanta: false,
+      note: 'Animation läuft die GESAMTE Woche, nicht nur am 24.12.!'
     };
 
     if (checks.hasMenu && checks.isPublished) {
