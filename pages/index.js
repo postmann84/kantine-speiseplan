@@ -72,6 +72,9 @@ export default function Home() {
         // Hole Feiertage immer, unabhängig vom Urlaubsstatus
         const weekHolidays = getHolidaysForWeek(data.data.weekStart);
         setHolidays(weekHolidays);
+        
+        // Prüfe ob Weihnachtsmann-Animation gezeigt werden soll
+        checkSantaAnimation(data.data);
       } catch (error) {
         setError('Fehler beim Laden des Speiseplans');
       } finally {
@@ -81,6 +84,43 @@ export default function Home() {
 
     fetchMenu();
   }, []);
+
+  // Funktion zum Prüfen ob Weihnachtsmann am 24.12. angezeigt werden soll
+  const checkSantaAnimation = (menuData) => {
+    if (!menuData || !menuData.isPublished) {
+      return; // Kein veröffentlichter Speiseplan
+    }
+
+    const today = new Date();
+    const day = today.getDate();
+    const month = today.getMonth() + 1; // 0-indexiert, daher +1
+
+    // Prüfe ob heute der 24. Dezember ist
+    if (day !== 24 || month !== 12) {
+      return; // Nicht der 24.12.
+    }
+
+    // Prüfe ob die Woche des Speiseplans den 24.12. enthält
+    const weekStart = new Date(menuData.weekStart);
+    const weekEnd = new Date(menuData.weekEnd);
+    const christmas = new Date(today.getFullYear(), 11, 24); // 11 = Dezember (0-indexiert)
+
+    // Setze alle Uhrzeiten auf Mitternacht für korrekten Vergleich
+    weekStart.setHours(0, 0, 0, 0);
+    weekEnd.setHours(23, 59, 59, 999);
+    christmas.setHours(12, 0, 0, 0);
+
+    // Prüfe ob 24.12. in der Woche liegt
+    if (christmas >= weekStart && christmas <= weekEnd) {
+      console.log('🎅 Weihnachtsmann-Animation wird aktiviert!');
+      setShowSanta(true);
+      
+      // Nach 15 Sekunden ausblenden (Animation läuft 2x komplett durch)
+      setTimeout(() => {
+        setShowSanta(false);
+      }, 15000);
+    }
+  };
 
   if (loading) return <div>Lade Speiseplan...</div>;
   if (error) return <div className="text-red-600">{error}</div>;
