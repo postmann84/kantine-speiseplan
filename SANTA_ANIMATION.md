@@ -10,10 +10,12 @@ Eine animierte Weihnachtsmann-Animation, die während der **gesamten Woche mit d
 
 ### Voraussetzungen (ALLE müssen erfüllt sein):
 
-1. ✅ **Datum**: Heute ist der **24. Dezember**
-2. ✅ **Veröffentlichter Speiseplan**: Ein Speiseplan mit `isPublished: true` existiert
-3. ✅ **Woche enthält 24.12.**: Die Woche des Speiseplans (weekStart bis weekEnd) umfasst den 24. Dezember
-4. ✅ **Nur Kundenseite**: Erscheint NUR auf `/` (index.js), NICHT im Admin-Bereich
+1. ✅ **Veröffentlichter Speiseplan**: Ein Speiseplan mit `isPublished: true` existiert
+2. ✅ **Woche enthält 24.12.**: Die Woche des Speiseplans (weekStart bis weekEnd) umfasst den 24. Dezember
+3. ✅ **Nur Kundenseite**: Erscheint NUR auf `/` (index.js), NICHT im Admin-Bereich
+
+**WICHTIG:** Die Animation läuft während der **GESAMTEN Woche**, nicht nur am 24.12. selbst!
+Beispiel: Bei KW 52 (23.12. - 29.12.) läuft die Animation vom 23.12. bis 29.12.
 
 ### Was passiert?
 
