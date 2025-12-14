@@ -87,7 +87,7 @@ export default function Home() {
   }, []); // Lädt einmal beim Seitenaufruf
 
   // Funktion zum Prüfen ob Weihnachtsmann-Animation angezeigt werden soll
-  // Animation läuft die GESAMTE Woche, in der der 24.12. liegt (nicht nur am 24.12. selbst!)
+  // Animation läuft in ZWEI Wochen: 15.-19.12. (KW 51) UND 23.-29.12. (KW 52)
   const checkSantaAnimation = (menuData) => {
     if (!menuData || !menuData.isPublished) {
       console.log('❌ Kein veröffentlichter Speiseplan');
@@ -97,21 +97,36 @@ export default function Home() {
     const today = new Date();
     const currentYear = today.getFullYear();
 
-    // Prüfe ob die Woche des veröffentlichten Speiseplans den 24.12. enthält
+    // Definiere die Zeiträume für die Animation
     const weekStart = new Date(menuData.weekStart);
     const weekEnd = new Date(menuData.weekEnd);
-    const christmas = new Date(currentYear, 11, 24); // 11 = Dezember (0-indexiert)
+    
+    // Wichtige Dezember-Daten
+    const dec15 = new Date(currentYear, 11, 15); // 15.12. (Beginn KW 51)
+    const dec24 = new Date(currentYear, 11, 24); // 24.12. (in KW 52)
 
     // Setze alle Uhrzeiten auf Mitternacht für korrekten Vergleich
     weekStart.setHours(0, 0, 0, 0);
     weekEnd.setHours(23, 59, 59, 999);
-    christmas.setHours(12, 0, 0, 0);
+    dec15.setHours(0, 0, 0, 0);
+    dec24.setHours(12, 0, 0, 0);
 
-    // Prüfe ob 24.12. in der veröffentlichten Woche liegt
-    if (christmas >= weekStart && christmas <= weekEnd) {
+    // Prüfe ob die Woche den 15.12. ODER den 24.12. enthält
+    const containsDec15 = dec15 >= weekStart && dec15 <= weekEnd;
+    const containsDec24 = dec24 >= weekStart && dec24 <= weekEnd;
+
+    if (containsDec15 || containsDec24) {
       console.log('🎅 Weihnachtsmann-Animation wird aktiviert!');
       console.log(`✅ Veröffentlichte Woche: ${weekStart.toISOString().split('T')[0]} bis ${weekEnd.toISOString().split('T')[0]}`);
-      console.log(`🎄 Diese Woche enthält den 24.12. → Animation läuft als Dauerschleife!`);
+      
+      if (containsDec15 && containsDec24) {
+        console.log('🎄 Diese Woche enthält 15.12. UND 24.12. → Animation aktiv!');
+      } else if (containsDec15) {
+        console.log('🎄 Diese Woche enthält 15.12. (KW 51) → Animation aktiv!');
+      } else {
+        console.log('🎄 Diese Woche enthält 24.12. (KW 52) → Animation aktiv!');
+      }
+      
       setShowSanta(true);
       
       // KEINE Zeitbegrenzung mehr - Animation läuft kontinuierlich!
@@ -119,7 +134,7 @@ export default function Home() {
       // Schneeflocken-Animation: Alle 30 Sekunden für 5 Sekunden
       startSnowflakeInterval();
     } else {
-      console.log(`❌ 24.12. liegt nicht in der veröffentlichten Woche (${weekStart.toISOString().split('T')[0]} bis ${weekEnd.toISOString().split('T')[0]})`);
+      console.log(`❌ Woche (${weekStart.toISOString().split('T')[0]} bis ${weekEnd.toISOString().split('T')[0]}) enthält weder 15.12. noch 24.12.`);
     }
   };
 
