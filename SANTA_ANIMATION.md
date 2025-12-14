@@ -62,12 +62,14 @@ Eine animierte Weihnachtsmann-Animation, die während **ZWEI Wochen** über den 
 
 ### Testen (jederzeit möglich!):
 
-1. **Veröffentlichen Sie einen Speiseplan** für die Woche mit dem 24.12. (z.B. KW 52: 23.-29.12.)
+1. **Veröffentlichen Sie einen Speiseplan** für eine der beiden Wochen:
+   - **KW 51**: 15.-19.12.2024 (Mo-Fr)
+   - **KW 52**: 23.-29.12.2024 (Mo-So)
 2. Öffnen Sie die **öffentliche Seite**: `https://ihre-domain.vercel.app`
 3. Der Weihnachtsmann sollte automatisch erscheinen (unabhängig vom heutigen Datum!)
-4. Nach 15 Sekunden verschwindet er
+4. Animation läuft als Dauerschleife
 
-**Sie können das JETZT sofort testen** - kein spezieller Test-Modus nötig!
+**Sie können das JETZT sofort testen** - veröffentlichen Sie einfach KW 51!
 
 ---
 
