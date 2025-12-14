@@ -55,32 +55,14 @@ Beispiel: Bei KW 52 (23.12. - 29.12.) läuft die Animation vom 23.12. bis 29.12.
 
 ## 🧪 Testing
 
-### Manuelles Testen am 24.12.2024:
+### Testen (jederzeit möglich!):
 
-1. **Veröffentlichen Sie einen Speiseplan** für die Woche mit dem 24.12. (KW 52)
+1. **Veröffentlichen Sie einen Speiseplan** für die Woche mit dem 24.12. (z.B. KW 52: 23.-29.12.)
 2. Öffnen Sie die **öffentliche Seite**: `https://ihre-domain.vercel.app`
-3. Der Weihnachtsmann sollte automatisch erscheinen
+3. Der Weihnachtsmann sollte automatisch erscheinen (unabhängig vom heutigen Datum!)
 4. Nach 15 Sekunden verschwindet er
 
-### Testen außerhalb des 24.12. (für Entwicklung):
-
-Um die Animation zu jedem Datum zu testen, können Sie die Prüfung temporär deaktivieren:
-
-**In `/app/pages/index.js`, Zeile ~109:**
-
-```javascript
-// ORIGINAL (nur am 24.12.):
-if (day !== 24 || month !== 12) {
-  return; // Nicht der 24.12.
-}
-
-// FÜR TESTS (immer anzeigen):
-if (false) {  // Temporär auf false setzen
-  return;
-}
-```
-
-**WICHTIG**: Diese Änderung NUR für Tests! Danach zurücksetzen!
+**Sie können das JETZT sofort testen** - kein spezieller Test-Modus nötig!
 
 ---
 
