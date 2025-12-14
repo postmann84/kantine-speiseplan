@@ -668,6 +668,126 @@ export default function Home() {
         </>
       )}
 
+      {/* Schneeflocken-Animation - alle 30 Sekunden für 5 Sekunden */}
+      {showSnowflakes && showSanta && (
+        <>
+          <style jsx>{`
+            @keyframes snowfall {
+              0% {
+                transform: translateY(-10vh) translateX(0);
+                opacity: 0;
+              }
+              10% {
+                opacity: 1;
+              }
+              90% {
+                opacity: 1;
+              }
+              100% {
+                transform: translateY(110vh) translateX(var(--drift));
+                opacity: 0;
+              }
+            }
+            
+            @keyframes sway {
+              0%, 100% {
+                transform: translateX(0);
+              }
+              50% {
+                transform: translateX(20px);
+              }
+            }
+            
+            .snowflake-container {
+              position: fixed;
+              top: 0;
+              left: 0;
+              width: 100%;
+              height: 100%;
+              pointer-events: none;
+              z-index: 9998; /* Unter Santa, über Rest */
+              overflow: hidden;
+            }
+            
+            .snowflake {
+              position: absolute;
+              color: white;
+              font-size: var(--size);
+              animation: snowfall var(--duration) linear infinite;
+              animation-delay: var(--delay);
+              text-shadow: 0 0 5px rgba(255, 255, 255, 0.8);
+              opacity: 0.9;
+              user-select: none;
+            }
+            
+            /* Verschiedene Schneeflocken-Größen und Geschwindigkeiten */
+            .snowflake:nth-child(1) { --size: 20px; --duration: 8s; --delay: 0s; left: 5%; --drift: 30px; }
+            .snowflake:nth-child(2) { --size: 16px; --duration: 10s; --delay: 1s; left: 15%; --drift: -20px; }
+            .snowflake:nth-child(3) { --size: 24px; --duration: 12s; --delay: 0.5s; left: 25%; --drift: 40px; }
+            .snowflake:nth-child(4) { --size: 18px; --duration: 9s; --delay: 2s; left: 35%; --drift: -30px; }
+            .snowflake:nth-child(5) { --size: 22px; --duration: 11s; --delay: 1.5s; left: 45%; --drift: 25px; }
+            .snowflake:nth-child(6) { --size: 16px; --duration: 10s; --delay: 0.8s; left: 55%; --drift: -35px; }
+            .snowflake:nth-child(7) { --size: 20px; --duration: 13s; --delay: 2.5s; left: 65%; --drift: 20px; }
+            .snowflake:nth-child(8) { --size: 18px; --duration: 9s; --delay: 1.2s; left: 75%; --drift: -25px; }
+            .snowflake:nth-child(9) { --size: 24px; --duration: 11s; --delay: 0.3s; left: 85%; --drift: 35px; }
+            .snowflake:nth-child(10) { --size: 16px; --duration: 10s; --delay: 1.8s; left: 95%; --drift: -20px; }
+            .snowflake:nth-child(11) { --size: 20px; --duration: 12s; --delay: 0.6s; left: 10%; --drift: 28px; }
+            .snowflake:nth-child(12) { --size: 18px; --duration: 9s; --delay: 2.2s; left: 30%; --drift: -32px; }
+            .snowflake:nth-child(13) { --size: 22px; --duration: 11s; --delay: 1.1s; left: 50%; --drift: 22px; }
+            .snowflake:nth-child(14) { --size: 16px; --duration: 10s; --delay: 1.6s; left: 70%; --drift: -28px; }
+            .snowflake:nth-child(15) { --size: 24px; --duration: 13s; --delay: 0.9s; left: 90%; --drift: 38px; }
+          `}</style>
+          
+          <div className="snowflake-container">
+            {/* 15 Schneeflocken mit verschiedenen Designs */}
+            <div className="snowflake">❄</div>
+            <div className="snowflake">❅</div>
+            <div className="snowflake">❆</div>
+            <div className="snowflake">❄</div>
+            <div className="snowflake">❅</div>
+            <div className="snowflake">❆</div>
+            <div className="snowflake">❄</div>
+            <div className="snowflake">❅</div>
+            <div className="snowflake">❆</div>
+            <div className="snowflake">❄</div>
+            <div className="snowflake">❅</div>
+            <div className="snowflake">❆</div>
+            <div className="snowflake">❄</div>
+            <div className="snowflake">❅</div>
+            <div className="snowflake">❆</div>
+          </div>
+        </>
+      )}
+
+      <PrintMenu menuData={menu} />
+      </div>
+    </>
+  );
+}
+          
+          <div className="santa-container">
+            {/* Prüfe ob WebM (mit Transparenz) verfügbar ist, sonst MP4 */}
+            <video 
+              className="santa-video"
+              autoPlay 
+              loop 
+              muted
+              playsInline
+              style={{ background: 'transparent' }}
+            >
+              {/* WebM mit Alpha-Kanal (Transparenz) - BESTE OPTION */}
+              <source src="/santa-animation.webm" type="video/webm" />
+              
+              {/* Fallback auf MP4 falls WebM nicht verfügbar */}
+              <source src="/santa-animation.mp4" type="video/mp4" />
+              
+              {/* Fallback auf GIF falls Video nicht unterstützt wird */}
+              <img src="/santa-animation.gif" alt="Weihnachtsmann Animation" />
+            </video>
+          </div>
+        </>
+      )}
+
       <PrintMenu menuData={menu} />
       </div>
     </>
