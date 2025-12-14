@@ -600,17 +600,19 @@ export default function Home() {
             .santa-video {
               height: 120px;
               width: auto;
-              /* Transparenter Hintergrund - entfernt Kacheln/Hintergrund */
+              /* Transparenter Hintergrund */
               background: transparent !important;
-              /* Verschiedene Optionen - passen Sie an wenn nötig: */
-              /* Option 1: Multiply für helle Hintergründe */
-              mix-blend-mode: multiply;
               
-              /* Option 2: Falls der Hintergrund dunkel ist, kommentieren Sie multiply aus und nutzen Sie screen: */
-              /* mix-blend-mode: screen; */
-              
-              /* Leichte Filter-Anpassung für bessere Sichtbarkeit */
-              filter: contrast(1.15);
+              /* WebM mit Alpha-Kanal braucht KEINE Blend-Modes! */
+              /* Für MP4 Fallback (falls Sie noch kein WebM haben): */
+              /* mix-blend-mode: multiply; */
+            }
+            
+            /* Fallback für GIF-Bild */
+            .santa-video img {
+              height: 120px;
+              width: auto;
+              background: transparent;
             }
             
             @media (max-width: 768px) {
