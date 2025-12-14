@@ -66,9 +66,14 @@ export default async function handler(req, res) {
       reasons: !checks.shouldShowSanta ? [
         !checks.hasMenu && 'Kein Speiseplan vorhanden',
         !checks.isPublished && 'Speiseplan ist nicht veröffentlicht',
-        checks.hasMenu && checks.isPublished && !checks.weekContainsChristmas && 
-          `Die Woche (${checks.weekStart} bis ${checks.weekEnd}) enthält nicht den 24.12.`
-      ].filter(Boolean) : []
+        checks.hasMenu && checks.isPublished && !checks.weekContainsDec15 && !checks.weekContainsDec24 && 
+          `Die Woche (${checks.weekStart} bis ${checks.weekEnd}) enthält weder 15.12. noch 24.12.`
+      ].filter(Boolean) : [],
+      activeWeeks: {
+        week1: 'KW 51: 15.-19.12.2024',
+        week2: 'KW 52: 23.-29.12.2024',
+        currentWeekMatch: checks.weekContainsDec15 ? 'KW 51 (15.12.)' : checks.weekContainsDec24 ? 'KW 52 (24.12.)' : 'Keine'
+      }
     });
 
   } catch (error) {
