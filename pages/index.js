@@ -600,12 +600,17 @@ export default function Home() {
             .santa-video {
               height: 120px;
               width: auto;
-              /* Transparenter Hintergrund - entfernt Kacheln */
+              /* Transparenter Hintergrund - entfernt Kacheln/Hintergrund */
               background: transparent !important;
-              /* Mix-Blend-Mode um helle Hintergründe zu entfernen */
+              /* Verschiedene Optionen - passen Sie an wenn nötig: */
+              /* Option 1: Multiply für helle Hintergründe */
               mix-blend-mode: multiply;
-              /* Erhöhe Kontrast um Hintergrund auszublenden */
-              filter: contrast(1.2) brightness(1.1);
+              
+              /* Option 2: Falls der Hintergrund dunkel ist, kommentieren Sie multiply aus und nutzen Sie screen: */
+              /* mix-blend-mode: screen; */
+              
+              /* Leichte Filter-Anpassung für bessere Sichtbarkeit */
+              filter: contrast(1.15);
             }
             
             @media (max-width: 768px) {
