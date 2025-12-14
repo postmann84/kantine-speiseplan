@@ -85,43 +85,32 @@ export default function Home() {
     fetchMenu();
   }, [router.query.testSanta]); // Re-run wenn testSanta Parameter sich ändert
 
-  // Funktion zum Prüfen ob Weihnachtsmann am 24.12. angezeigt werden soll
+  // Funktion zum Prüfen ob Weihnachtsmann-Animation angezeigt werden soll
+  // Animation läuft die GESAMTE Woche, in der der 24.12. liegt (nicht nur am 24.12. selbst!)
   const checkSantaAnimation = (menuData) => {
     if (!menuData || !menuData.isPublished) {
+      console.log('❌ Kein veröffentlichter Speiseplan');
       return; // Kein veröffentlichter Speiseplan
     }
 
     const today = new Date();
-    const day = today.getDate();
-    const month = today.getMonth() + 1; // 0-indexiert, daher +1
+    const currentYear = today.getFullYear();
 
-    // TEST-MODUS: Wenn URL-Parameter ?testSanta=true, dann immer anzeigen
-    const isTestMode = router.query.testSanta === 'true';
-    
-    if (isTestMode) {
-      console.log('🎅 TEST-MODUS: Weihnachtsmann-Animation aktiviert!');
-    }
-
-    // Prüfe ob heute der 24. Dezember ist (außer im Test-Modus)
-    if (!isTestMode && (day !== 24 || month !== 12)) {
-      console.log(`❌ Heute ist nicht der 24.12. (heute: ${day}.${month}.)`);
-      return; // Nicht der 24.12.
-    }
-
-    // Prüfe ob die Woche des Speiseplans den 24.12. enthält
+    // Prüfe ob die Woche des veröffentlichten Speiseplans den 24.12. enthält
     const weekStart = new Date(menuData.weekStart);
     const weekEnd = new Date(menuData.weekEnd);
-    const christmas = new Date(today.getFullYear(), 11, 24); // 11 = Dezember (0-indexiert)
+    const christmas = new Date(currentYear, 11, 24); // 11 = Dezember (0-indexiert)
 
     // Setze alle Uhrzeiten auf Mitternacht für korrekten Vergleich
     weekStart.setHours(0, 0, 0, 0);
     weekEnd.setHours(23, 59, 59, 999);
     christmas.setHours(12, 0, 0, 0);
 
-    // Prüfe ob 24.12. in der Woche liegt (im Test-Modus übersprungen)
-    if (isTestMode || (christmas >= weekStart && christmas <= weekEnd)) {
+    // Prüfe ob 24.12. in der veröffentlichten Woche liegt
+    if (christmas >= weekStart && christmas <= weekEnd) {
       console.log('🎅 Weihnachtsmann-Animation wird aktiviert!');
-      console.log(`Woche: ${weekStart.toISOString().split('T')[0]} bis ${weekEnd.toISOString().split('T')[0]}`);
+      console.log(`✅ Veröffentlichte Woche: ${weekStart.toISOString().split('T')[0]} bis ${weekEnd.toISOString().split('T')[0]}`);
+      console.log(`🎄 Diese Woche enthält den 24.12. → Animation läuft die ganze Woche!`);
       setShowSanta(true);
       
       // Nach 15 Sekunden ausblenden (Animation läuft 2x komplett durch)
@@ -129,7 +118,7 @@ export default function Home() {
         setShowSanta(false);
       }, 15000);
     } else {
-      console.log(`❌ 24.12. liegt nicht in der Woche (${weekStart.toISOString().split('T')[0]} bis ${weekEnd.toISOString().split('T')[0]})`);
+      console.log(`❌ 24.12. liegt nicht in der veröffentlichten Woche (${weekStart.toISOString().split('T')[0]} bis ${weekEnd.toISOString().split('T')[0]})`);
     }
   };
 
