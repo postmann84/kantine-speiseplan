@@ -1,8 +1,8 @@
-# 🎅 Weihnachtsmann-Animation am 24. Dezember
+# 🎅 Weihnachtsmann-Animation zur Weihnachtswoche
 
 ## 📋 Übersicht
 
-Eine animierte Weihnachtsmann-Animation, die **nur am 24. Dezember** über den Bildschirm der öffentlichen Kundenseite fliegt, wenn ein Speiseplan für diese Woche veröffentlicht ist.
+Eine animierte Weihnachtsmann-Animation, die während der **gesamten Woche mit dem 24. Dezember** über den Bildschirm der öffentlichen Kundenseite fliegt, wenn der Speiseplan für diese Woche veröffentlicht ist.
 
 ---
 
