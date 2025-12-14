@@ -45,11 +45,10 @@ export default async function handler(req, res) {
       checks.weekContainsChristmas = christmas >= weekStart && christmas <= weekEnd;
     }
 
-    // Finale Entscheidung
+    // Finale Entscheidung (kein Datumscheck mehr!)
     checks.shouldShowSanta = 
       checks.hasMenu && 
       checks.isPublished && 
-      checks.isChristmasEve && 
       checks.weekContainsChristmas;
 
     return res.status(200).json({
