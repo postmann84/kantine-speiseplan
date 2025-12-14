@@ -594,13 +594,16 @@ export default function Home() {
               left: -200px;
               z-index: 9999;
               pointer-events: none;
-              animation: santaFly 7s linear infinite;
+              animation: santaFly 15s linear infinite; /* Langsamer: 15s statt 7s */
             }
             
             .santa-video {
               height: 120px;
               width: auto;
-              filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
+              /* Transparenter Hintergrund - entfernt Kacheln */
+              background: transparent;
+              mix-blend-mode: normal;
+              /* Entferne drop-shadow um Hintergrund besser transparent zu machen */
             }
             
             @media (max-width: 768px) {
