@@ -83,7 +83,7 @@ export default function Home() {
     };
 
     fetchMenu();
-  }, [router.query.testSanta]); // Re-run wenn testSanta Parameter sich ändert
+  }, []); // Lädt einmal beim Seitenaufruf
 
   // Funktion zum Prüfen ob Weihnachtsmann-Animation angezeigt werden soll
   // Animation läuft die GESAMTE Woche, in der der 24.12. liegt (nicht nur am 24.12. selbst!)
