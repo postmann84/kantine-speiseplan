@@ -171,11 +171,10 @@ checkSantaAnimation()
 
 **Checkliste:**
 
-1. ✅ Ist heute wirklich der 24. Dezember?
-2. ✅ Ist ein Speiseplan veröffentlicht? (Admin → "Veröffentlichen" Checkbox)
-3. ✅ Liegt der 24.12. in der Woche des Speiseplans?
-4. ✅ Browser-Cache geleert? (Strg+Shift+R / Cmd+Shift+R)
-5. ✅ Video vorhanden? Prüfe: `/public/santa-animation.mp4` existiert
+1. ✅ Ist ein Speiseplan veröffentlicht? (Admin → "Veröffentlichen" Checkbox)
+2. ✅ Liegt der 24.12. in der Woche des Speiseplans? (z.B. KW 52: 23.-29.12.)
+3. ✅ Browser-Cache geleert? (Strg+Shift+R / Cmd+Shift+R)
+4. ✅ Video vorhanden? Prüfe: `/public/santa-animation.mp4` existiert (4 MB)
 
 **Debug:**
 
