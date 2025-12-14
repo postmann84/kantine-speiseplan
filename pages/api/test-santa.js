@@ -1,9 +1,7 @@
-// Test-API um zu prüfen ob Santa-Animation am 24.12. angezeigt werden würde
+// Test-API um zu prüfen ob Santa-Animation angezeigt werden würde
 // Aufruf: GET /api/test-santa
 // 
-// WICHTIG: Um die Animation JETZT zu testen (vor dem 24.12.):
-// Öffnen Sie: /?testSanta=true
-// 
+// Die Animation läuft während der GESAMTEN Woche, in der der 24.12. liegt!
 // Diese API zeigt nur den Status, aktiviert die Animation aber NICHT!
 
 export default async function handler(req, res) {
