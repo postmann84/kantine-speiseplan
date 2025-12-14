@@ -115,9 +115,27 @@ export default function Home() {
       setShowSanta(true);
       
       // KEINE Zeitbegrenzung mehr - Animation läuft kontinuierlich!
+      
+      // Schneeflocken-Animation: Alle 30 Sekunden für 5 Sekunden
+      startSnowflakeInterval();
     } else {
       console.log(`❌ 24.12. liegt nicht in der veröffentlichten Woche (${weekStart.toISOString().split('T')[0]} bis ${weekEnd.toISOString().split('T')[0]})`);
     }
+  };
+
+  // Schneeflocken-Intervall: Alle 30 Sekunden für 5 Sekunden
+  const startSnowflakeInterval = () => {
+    // Erste Schneeflocken nach 5 Sekunden
+    setTimeout(() => {
+      setShowSnowflakes(true);
+      setTimeout(() => setShowSnowflakes(false), 5000); // 5 Sekunden lang
+    }, 5000);
+
+    // Dann alle 30 Sekunden wiederholen
+    setInterval(() => {
+      setShowSnowflakes(true);
+      setTimeout(() => setShowSnowflakes(false), 5000); // 5 Sekunden lang
+    }, 30000); // Alle 30 Sekunden
   };
 
   if (loading) return <div>Lade Speiseplan...</div>;
