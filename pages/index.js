@@ -83,7 +83,7 @@ export default function Home() {
     };
 
     fetchMenu();
-  }, []);
+  }, [router.query.testSanta]); // Re-run wenn testSanta Parameter sich ändert
 
   // Funktion zum Prüfen ob Weihnachtsmann am 24.12. angezeigt werden soll
   const checkSantaAnimation = (menuData) => {
