@@ -95,8 +95,16 @@ export default function Home() {
     const day = today.getDate();
     const month = today.getMonth() + 1; // 0-indexiert, daher +1
 
-    // Prüfe ob heute der 24. Dezember ist
-    if (day !== 24 || month !== 12) {
+    // TEST-MODUS: Wenn URL-Parameter ?testSanta=true, dann immer anzeigen
+    const isTestMode = router.query.testSanta === 'true';
+    
+    if (isTestMode) {
+      console.log('🎅 TEST-MODUS: Weihnachtsmann-Animation aktiviert!');
+    }
+
+    // Prüfe ob heute der 24. Dezember ist (außer im Test-Modus)
+    if (!isTestMode && (day !== 24 || month !== 12)) {
+      console.log(`❌ Heute ist nicht der 24.12. (heute: ${day}.${month}.)`);
       return; // Nicht der 24.12.
     }
 
@@ -110,15 +118,18 @@ export default function Home() {
     weekEnd.setHours(23, 59, 59, 999);
     christmas.setHours(12, 0, 0, 0);
 
-    // Prüfe ob 24.12. in der Woche liegt
-    if (christmas >= weekStart && christmas <= weekEnd) {
+    // Prüfe ob 24.12. in der Woche liegt (im Test-Modus übersprungen)
+    if (isTestMode || (christmas >= weekStart && christmas <= weekEnd)) {
       console.log('🎅 Weihnachtsmann-Animation wird aktiviert!');
+      console.log(`Woche: ${weekStart.toISOString().split('T')[0]} bis ${weekEnd.toISOString().split('T')[0]}`);
       setShowSanta(true);
       
       // Nach 15 Sekunden ausblenden (Animation läuft 2x komplett durch)
       setTimeout(() => {
         setShowSanta(false);
       }, 15000);
+    } else {
+      console.log(`❌ 24.12. liegt nicht in der Woche (${weekStart.toISOString().split('T')[0]} bis ${weekEnd.toISOString().split('T')[0]})`);
     }
   };
 
