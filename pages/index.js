@@ -14,6 +14,7 @@ export default function Home() {
   const [holidays, setHolidays] = useState({});
   const [allergenPopup, setAllergenPopup] = useState({ open: false, mealName: '', allergens: [], additives: [] });
   const [showSanta, setShowSanta] = useState(false);
+  const [showSnowflakes, setShowSnowflakes] = useState(false);
   
   // Kiosk-Modus für Monitor-Anzeige
   const isKioskMode = router.query.kiosk === 'true';
