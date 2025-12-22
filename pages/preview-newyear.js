@@ -9,7 +9,7 @@ export default function PreviewNewYear() {
   }, []);
 
   const startNewYearAnimation = () => {
-    // Phase 1: Rakete fliegt (5 Sekunden)
+    // Phase 1: Rakete fliegt diagonal (3 Sekunden)
     setNewYearPhase(1);
     
     setTimeout(() => {
@@ -17,15 +17,15 @@ export default function PreviewNewYear() {
       setNewYearPhase(2);
       
       setTimeout(() => {
-        // Phase 3: 2026 fällt runter (5 Sekunden)
+        // Phase 3: VIELE 2026er fallen (8 Sekunden)
         setNewYearPhase(3);
         
         setTimeout(() => {
           // Zurück zu Phase 1 und wiederholen
           startNewYearAnimation();
-        }, 5000);
+        }, 8000);
       }, 2000);
-    }, 5000);
+    }, 3000);
   };
 
   return (
