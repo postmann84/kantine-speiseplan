@@ -963,9 +963,13 @@ export default function Home() {
               height: var(--size);
               width: auto;
               animation: swing 2s ease-in-out infinite;
-              /* Entferne Schachbrett-Hintergrund */
-              mix-blend-mode: screen;
-              filter: contrast(1.2) brightness(1.05);
+              /* Noch aggressiveres Entfernen des weißen Hintergrunds */
+              mix-blend-mode: darken;
+              filter: 
+                contrast(1.6) 
+                brightness(1.3)
+                saturate(1.4);
+              background: transparent !important;
             }
             
             /* Verschiedene Positionen und Geschwindigkeiten für 2026er */
