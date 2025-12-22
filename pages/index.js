@@ -836,6 +836,163 @@ export default function Home() {
         </>
       )}
 
+      {/* Neujahrs-Animation - 3 Phasen */}
+      {showNewYear && (
+        <>
+          <style jsx>{`
+            /* Phase 1: Rakete fliegt von links nach rechts */
+            @keyframes rocketFly {
+              0% {
+                left: -300px;
+                transform: rotate(-15deg);
+              }
+              100% {
+                left: 100%;
+                transform: rotate(-15deg);
+              }
+            }
+            
+            /* Phase 2: Explosion/Feuerwerk erscheint */
+            @keyframes explode {
+              0% {
+                transform: scale(0) rotate(0deg);
+                opacity: 0;
+              }
+              50% {
+                transform: scale(1.2) rotate(180deg);
+                opacity: 1;
+              }
+              100% {
+                transform: scale(1) rotate(360deg);
+                opacity: 1;
+              }
+            }
+            
+            /* Phase 3: 2026 fällt mit Fallschirm runter */
+            @keyframes fallDown {
+              0% {
+                top: -200px;
+                transform: translateX(0) rotate(0deg);
+                opacity: 0;
+              }
+              10% {
+                opacity: 1;
+              }
+              100% {
+                top: 110vh;
+                transform: translateX(50px) rotate(10deg);
+                opacity: 1;
+              }
+            }
+            
+            /* Sanftes Schwingen */
+            @keyframes swing {
+              0%, 100% {
+                transform: rotate(-5deg);
+              }
+              50% {
+                transform: rotate(5deg);
+              }
+            }
+            
+            .newyear-container {
+              position: fixed;
+              z-index: 9997; /* Unter Santa und Schneeflocken */
+              pointer-events: none;
+            }
+            
+            /* Phase 1: Rakete */
+            .rocket-phase {
+              bottom: 30%;
+              left: -300px;
+              animation: rocketFly 5s linear forwards;
+            }
+            
+            .rocket-img {
+              height: 250px;
+              width: auto;
+              /* Entferne grauen Hintergrund mit Mix-Blend-Mode */
+              mix-blend-mode: multiply;
+              filter: brightness(1.1);
+            }
+            
+            /* Phase 2: Explosion */
+            .explosion-phase {
+              left: 50%;
+              top: 40%;
+              transform: translate(-50%, -50%);
+            }
+            
+            .explosion-img {
+              width: 600px;
+              height: auto;
+              animation: explode 2s ease-out forwards;
+            }
+            
+            /* Phase 3: 2026 Fallschirm */
+            .falling-phase {
+              left: 50%;
+              top: -200px;
+              transform: translateX(-50%);
+              animation: fallDown 5s ease-in forwards;
+            }
+            
+            .year-img {
+              height: 300px;
+              width: auto;
+              animation: swing 2s ease-in-out infinite;
+            }
+            
+            @media (max-width: 768px) {
+              .rocket-img {
+                height: 150px;
+              }
+              
+              .explosion-img {
+                width: 400px;
+              }
+              
+              .year-img {
+                height: 200px;
+              }
+            }
+          `}</style>
+          
+          {/* Phase 1: Rakete fliegt */}
+          {newYearPhase === 1 && (
+            <div className="newyear-container rocket-phase">
+              <img 
+                src="/newyear-rocket.png" 
+                alt="Schweinchen auf Rakete"
+                className="rocket-img"
+              />
+            </div>
+          )}
+          
+          {/* Phase 2: Explosion/Feuerwerk */}
+          {newYearPhase === 2 && (
+            <div className="newyear-container explosion-phase">
+              <img 
+                src="/newyear-firework.png" 
+                alt="Silvester Feuerwerk"
+                className="explosion-img"
+              />
+            </div>
+          )}
+          
+          {/* Phase 3: 2026 fällt mit Fallschirm */}
+          {newYearPhase === 3 && (
+            <div className="newyear-container falling-phase">
+              <img 
+                src="/newyear-2026.png" 
+                alt="2026 mit Glücksklee-Fallschirm"
+                className="year-img"
+              />
+            </div>
+          )}
+        </>
+      )}
+
       <PrintMenu menuData={menu} />
       </div>
     </>
