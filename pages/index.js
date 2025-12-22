@@ -181,7 +181,7 @@ export default function Home() {
 
   // Neujahrs-Animation: 3 Phasen
   const startNewYearAnimation = () => {
-    // Phase 1: Rakete fliegt (5 Sekunden)
+    // Phase 1: Rakete fliegt diagonal nach oben (3 Sekunden - schneller!)
     setNewYearPhase(1);
     
     setTimeout(() => {
@@ -189,15 +189,15 @@ export default function Home() {
       setNewYearPhase(2);
       
       setTimeout(() => {
-        // Phase 3: 2026 fällt runter (5 Sekunden)
+        // Phase 3: VIELE 2026er fallen runter (8 Sekunden)
         setNewYearPhase(3);
         
         setTimeout(() => {
           // Zurück zu Phase 1 und wiederholen
           startNewYearAnimation();
-        }, 5000);
+        }, 8000);
       }, 2000);
-    }, 5000);
+    }, 3000);
   };
 
   // Schneeflocken-Intervall: Alle 30 Sekunden für 5 Sekunden
