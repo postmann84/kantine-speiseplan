@@ -173,14 +173,7 @@ export default function PreviewNewYear() {
           width: 600px;
           height: auto;
           animation: explode 2s ease-out forwards;
-          /* Aggressives Entfernen des weißen Hintergrunds */
-          mix-blend-mode: darken;
-          filter: 
-            contrast(1.5) 
-            brightness(1.2)
-            invert(0)
-            saturate(1.3);
-          background: transparent !important;
+          /* PNG hat jetzt echte Transparenz! */
         }
         
         /* Phase 3: Viele 2026er Container */
@@ -206,13 +199,7 @@ export default function PreviewNewYear() {
           height: var(--size);
           width: auto;
           animation: swing 2s ease-in-out infinite;
-          /* Noch aggressiveres Entfernen des weißen Hintergrunds */
-          mix-blend-mode: darken;
-          filter: 
-            contrast(1.6) 
-            brightness(1.3)
-            saturate(1.4);
-          background: transparent !important;
+          /* PNG hat jetzt echte Transparenz! */
         }
         
         .year-item:nth-child(1) { left: 10%; --size: 180px; --duration: 8s; --delay: 0s; --drift: 30px; --rotation: 5deg; }
