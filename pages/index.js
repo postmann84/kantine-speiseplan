@@ -933,19 +933,46 @@ export default function Home() {
               filter: contrast(1.2) brightness(1.1);
             }
             
-            /* Phase 3: 2026 Fallschirm */
-            .falling-phase {
-              left: 50%;
+            /* Phase 3: Viele 2026er fallen - Container für alle */
+            .falling-phase-container {
+              position: fixed;
+              top: 0;
+              left: 0;
+              width: 100%;
+              height: 100%;
+              pointer-events: none;
+              z-index: 9997;
+              overflow: hidden;
+            }
+            
+            /* Einzelne 2026 Fallschirme */
+            .year-item {
+              position: absolute;
               top: -200px;
-              transform: translateX(-50%);
-              animation: fallDown 5s ease-in forwards;
+              animation: fallDown var(--duration) ease-in forwards;
+              animation-delay: var(--delay);
             }
             
             .year-img {
-              height: 300px;
+              height: var(--size);
               width: auto;
               animation: swing 2s ease-in-out infinite;
+              /* Entferne Schachbrett-Hintergrund */
+              mix-blend-mode: screen;
+              filter: contrast(1.2) brightness(1.05);
             }
+            
+            /* Verschiedene Positionen und Geschwindigkeiten für 2026er */
+            .year-item:nth-child(1) { left: 10%; --size: 180px; --duration: 8s; --delay: 0s; --drift: 30px; --rotation: 5deg; }
+            .year-item:nth-child(2) { left: 25%; --size: 220px; --duration: 10s; --delay: 0.5s; --drift: -20px; --rotation: -8deg; }
+            .year-item:nth-child(3) { left: 40%; --size: 200px; --duration: 9s; --delay: 1s; --drift: 40px; --rotation: 12deg; }
+            .year-item:nth-child(4) { left: 55%; --size: 190px; --duration: 11s; --delay: 0.3s; --drift: -30px; --rotation: -5deg; }
+            .year-item:nth-child(5) { left: 70%; --size: 210px; --duration: 8.5s; --delay: 0.8s; --drift: 25px; --rotation: 8deg; }
+            .year-item:nth-child(6) { left: 85%; --size: 195px; --duration: 10.5s; --delay: 0.2s; --drift: -35px; --rotation: -10deg; }
+            .year-item:nth-child(7) { left: 15%; --size: 205px; --duration: 9.5s; --delay: 1.2s; --drift: 20px; --rotation: 6deg; }
+            .year-item:nth-child(8) { left: 50%; --size: 215px; --duration: 10s; --delay: 0.6s; --drift: -25px; --rotation: -7deg; }
+            .year-item:nth-child(9) { left: 35%; --size: 185px; --duration: 8.8s; --delay: 1.5s; --drift: 35px; --rotation: 9deg; }
+            .year-item:nth-child(10) { left: 80%; --size: 200px; --duration: 9.2s; --delay: 0.4s; --drift: -20px; --rotation: -6deg; }
             
             @media (max-width: 768px) {
               .rocket-img {
@@ -956,13 +983,13 @@ export default function Home() {
                 width: 400px;
               }
               
-              .year-img {
-                height: 200px;
+              .year-item:nth-child(n) {
+                --size: 120px !important;
               }
             }
           `}</style>
           
-          {/* Phase 1: Rakete fliegt */}
+          {/* Phase 1: Rakete fliegt diagonal nach oben */}
           {newYearPhase === 1 && (
             <div className="newyear-container rocket-phase">
               <img 
@@ -973,7 +1000,7 @@ export default function Home() {
             </div>
           )}
           
-          {/* Phase 2: Explosion/Feuerwerk */}
+          {/* Phase 2: Explosion/Feuerwerk oben rechts */}
           {newYearPhase === 2 && (
             <div className="newyear-container explosion-phase">
               <img 
@@ -984,14 +1011,40 @@ export default function Home() {
             </div>
           )}
           
-          {/* Phase 3: 2026 fällt mit Fallschirm */}
+          {/* Phase 3: VIELE 2026er fallen mit Fallschirm */}
           {newYearPhase === 3 && (
-            <div className="newyear-container falling-phase">
-              <img 
-                src="/newyear-2026.png" 
-                alt="2026 mit Glücksklee-Fallschirm"
-                className="year-img"
-              />
+            <div className="falling-phase-container">
+              {/* 10 verschiedene 2026 Fallschirme */}
+              <div className="year-item">
+                <img src="/newyear-2026.png" alt="2026" className="year-img" />
+              </div>
+              <div className="year-item">
+                <img src="/newyear-2026.png" alt="2026" className="year-img" />
+              </div>
+              <div className="year-item">
+                <img src="/newyear-2026.png" alt="2026" className="year-img" />
+              </div>
+              <div className="year-item">
+                <img src="/newyear-2026.png" alt="2026" className="year-img" />
+              </div>
+              <div className="year-item">
+                <img src="/newyear-2026.png" alt="2026" className="year-img" />
+              </div>
+              <div className="year-item">
+                <img src="/newyear-2026.png" alt="2026" className="year-img" />
+              </div>
+              <div className="year-item">
+                <img src="/newyear-2026.png" alt="2026" className="year-img" />
+              </div>
+              <div className="year-item">
+                <img src="/newyear-2026.png" alt="2026" className="year-img" />
+              </div>
+              <div className="year-item">
+                <img src="/newyear-2026.png" alt="2026" className="year-img" />
+              </div>
+              <div className="year-item">
+                <img src="/newyear-2026.png" alt="2026" className="year-img" />
+              </div>
             </div>
           )}
         </>
