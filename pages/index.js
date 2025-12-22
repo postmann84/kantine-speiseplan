@@ -138,6 +138,66 @@ export default function Home() {
     } else {
       console.log(`❌ Woche (${weekStart.toISOString().split('T')[0]} bis ${weekEnd.toISOString().split('T')[0]}) enthält weder 15.12. noch 24.12.`);
     }
+    
+    // Prüfe auch Neujahrs-Animation
+    checkNewYearAnimation(menuData);
+  };
+
+  // Funktion zum Prüfen ob Neujahrs-Animation angezeigt werden soll
+  // Animation läuft in der Woche mit dem 1. Januar
+  const checkNewYearAnimation = (menuData) => {
+    if (!menuData || !menuData.isPublished) {
+      return;
+    }
+
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const nextYear = currentYear + 1;
+
+    const weekStart = new Date(menuData.weekStart);
+    const weekEnd = new Date(menuData.weekEnd);
+    
+    // Prüfe ob die Woche den 1. Januar enthält (vom aktuellen oder nächsten Jahr)
+    const jan1Current = new Date(currentYear, 0, 1); // 1.1. aktuelles Jahr
+    const jan1Next = new Date(nextYear, 0, 1); // 1.1. nächstes Jahr
+
+    weekStart.setHours(0, 0, 0, 0);
+    weekEnd.setHours(23, 59, 59, 999);
+    jan1Current.setHours(12, 0, 0, 0);
+    jan1Next.setHours(12, 0, 0, 0);
+
+    const containsJan1 = (jan1Current >= weekStart && jan1Current <= weekEnd) || 
+                         (jan1Next >= weekStart && jan1Next <= weekEnd);
+
+    if (containsJan1) {
+      console.log('🎆 Neujahrs-Animation wird aktiviert!');
+      console.log(`✅ Veröffentlichte Woche: ${weekStart.toISOString().split('T')[0]} bis ${weekEnd.toISOString().split('T')[0]}`);
+      console.log('🎊 Diese Woche enthält den 1. Januar → Silvester-Animation aktiv!');
+      
+      setShowNewYear(true);
+      startNewYearAnimation();
+    }
+  };
+
+  // Neujahrs-Animation: 3 Phasen
+  const startNewYearAnimation = () => {
+    // Phase 1: Rakete fliegt (5 Sekunden)
+    setNewYearPhase(1);
+    
+    setTimeout(() => {
+      // Phase 2: Explosion/Feuerwerk (2 Sekunden)
+      setNewYearPhase(2);
+      
+      setTimeout(() => {
+        // Phase 3: 2026 fällt runter (5 Sekunden)
+        setNewYearPhase(3);
+        
+        setTimeout(() => {
+          // Zurück zu Phase 1 und wiederholen
+          startNewYearAnimation();
+        }, 5000);
+      }, 2000);
+    }, 5000);
   };
 
   // Schneeflocken-Intervall: Alle 30 Sekunden für 5 Sekunden
