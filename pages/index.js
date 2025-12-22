@@ -928,14 +928,14 @@ export default function Home() {
               width: 600px;
               height: auto;
               animation: explode 2s ease-out forwards;
-              /* Aggressives Entfernen des weißen Hintergrunds */
-              mix-blend-mode: darken;
+              /* Weißen Hintergrund komplett entfernen */
               filter: 
-                contrast(1.5) 
-                brightness(1.2)
-                invert(0)
-                saturate(1.3);
-              /* Fallback für bessere Transparenz */
+                drop-shadow(0 0 10px rgba(255,255,255,0.3))
+                brightness(1.1)
+                contrast(1.2)
+                saturate(1.2);
+              /* Isolation für bessere Transparenz */
+              isolation: isolate;
               background: transparent !important;
             }
             
@@ -963,12 +963,13 @@ export default function Home() {
               height: var(--size);
               width: auto;
               animation: swing 2s ease-in-out infinite;
-              /* Noch aggressiveres Entfernen des weißen Hintergrunds */
-              mix-blend-mode: darken;
+              /* Weißen Hintergrund komplett entfernen */
               filter: 
-                contrast(1.6) 
-                brightness(1.3)
-                saturate(1.4);
+                drop-shadow(0 0 8px rgba(255,255,255,0.2))
+                brightness(1.15)
+                contrast(1.25)
+                saturate(1.3);
+              isolation: isolate;
               background: transparent !important;
             }
             
