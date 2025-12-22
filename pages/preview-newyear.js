@@ -236,8 +236,8 @@ export default function PreviewNewYear() {
             width: 400px;
           }
           
-          .year-img {
-            height: 200px;
+          .year-item:nth-child(n) {
+            --size: 120px !important;
           }
         }
       `}</style>
@@ -248,21 +248,21 @@ export default function PreviewNewYear() {
         </div>
         
         <div className="phase-indicator">
-          {newYearPhase === 1 && '🚀 Phase 1: Rakete fliegt'}
+          {newYearPhase === 1 && '🚀 Phase 1: Rakete fliegt diagonal'}
           {newYearPhase === 2 && '💥 Phase 2: Explosion!'}
-          {newYearPhase === 3 && '🍀 Phase 3: 2026 fällt'}
+          {newYearPhase === 3 && '🍀 Phase 3: VIELE 2026er fallen!'}
         </div>
         
         <div className="preview-info">
           <strong>Timeline:</strong><br/>
-          Phase 1 (5s): Schweinchen auf Rakete fliegt 🚀<br/>
-          Phase 2 (2s): Feuerwerk explodiert 💥<br/>
-          Phase 3 (5s): 2026 mit Glücksklee-Fallschirm fällt 🍀<br/>
+          Phase 1 (3s): Rakete fliegt diagonal nach oben 🚀<br/>
+          Phase 2 (2s): Feuerwerk explodiert oben rechts 💥<br/>
+          Phase 3 (8s): VIELE 2026er fallen wie Schneeflocken 🍀<br/>
           <br/>
-          <em>Animation läuft als Endlosschleife (12s pro Durchlauf)</em>
+          <em>Animation läuft als Endlosschleife (13s pro Durchlauf)</em>
         </div>
 
-        {/* Phase 1: Rakete fliegt */}
+        {/* Phase 1: Rakete fliegt diagonal */}
         {newYearPhase === 1 && (
           <div className="newyear-container rocket-phase">
             <img 
@@ -273,7 +273,7 @@ export default function PreviewNewYear() {
           </div>
         )}
         
-        {/* Phase 2: Explosion/Feuerwerk */}
+        {/* Phase 2: Explosion/Feuerwerk oben rechts */}
         {newYearPhase === 2 && (
           <div className="newyear-container explosion-phase">
             <img 
@@ -284,14 +284,14 @@ export default function PreviewNewYear() {
           </div>
         )}
         
-        {/* Phase 3: 2026 fällt mit Fallschirm */}
+        {/* Phase 3: VIELE 2026er fallen */}
         {newYearPhase === 3 && (
-          <div className="newyear-container falling-phase">
-            <img 
-              src="/newyear-2026.png" 
-              alt="2026 mit Glücksklee-Fallschirm"
-              className="year-img"
-            />
+          <div className="falling-phase-container">
+            {[...Array(10)].map((_, i) => (
+              <div key={i} className="year-item">
+                <img src="/newyear-2026.png" alt="2026" className="year-img" />
+              </div>
+            ))}
           </div>
         )}
       </div>
