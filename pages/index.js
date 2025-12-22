@@ -928,9 +928,15 @@ export default function Home() {
               width: 600px;
               height: auto;
               animation: explode 2s ease-out forwards;
-              /* Entferne Schachbrett-Hintergrund */
-              mix-blend-mode: screen;
-              filter: contrast(1.2) brightness(1.1);
+              /* Aggressives Entfernen des weißen Hintergrunds */
+              mix-blend-mode: darken;
+              filter: 
+                contrast(1.5) 
+                brightness(1.2)
+                invert(0)
+                saturate(1.3);
+              /* Fallback für bessere Transparenz */
+              background: transparent !important;
             }
             
             /* Phase 3: Viele 2026er fallen - Container für alle */
