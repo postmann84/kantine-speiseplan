@@ -840,15 +840,17 @@ export default function Home() {
       {showNewYear && (
         <>
           <style jsx>{`
-            /* Phase 1: Rakete fliegt von links nach rechts */
+            /* Phase 1: Rakete fliegt diagonal von links unten nach rechts oben */
             @keyframes rocketFly {
               0% {
                 left: -300px;
-                transform: rotate(-15deg);
+                bottom: -200px;
+                transform: rotate(-45deg);
               }
               100% {
                 left: 100%;
-                transform: rotate(-15deg);
+                bottom: 80%;
+                transform: rotate(-45deg);
               }
             }
             
@@ -868,7 +870,7 @@ export default function Home() {
               }
             }
             
-            /* Phase 3: 2026 fällt mit Fallschirm runter */
+            /* Phase 3: Viele 2026er fallen wie Schneeflocken */
             @keyframes fallDown {
               0% {
                 top: -200px;
@@ -880,18 +882,18 @@ export default function Home() {
               }
               100% {
                 top: 110vh;
-                transform: translateX(50px) rotate(10deg);
+                transform: translateX(var(--drift)) rotate(var(--rotation));
                 opacity: 1;
               }
             }
             
-            /* Sanftes Schwingen */
+            /* Sanftes Schwingen beim Fallen */
             @keyframes swing {
               0%, 100% {
-                transform: rotate(-5deg);
+                transform: rotate(-3deg);
               }
               50% {
-                transform: rotate(5deg);
+                transform: rotate(3deg);
               }
             }
             
@@ -903,9 +905,9 @@ export default function Home() {
             
             /* Phase 1: Rakete */
             .rocket-phase {
-              bottom: 30%;
+              bottom: -200px;
               left: -300px;
-              animation: rocketFly 5s linear forwards;
+              animation: rocketFly 3s ease-out forwards;
             }
             
             .rocket-img {
@@ -916,17 +918,19 @@ export default function Home() {
               filter: brightness(1.1);
             }
             
-            /* Phase 2: Explosion */
+            /* Phase 2: Explosion - Position oben rechts wo Rakete ankommt */
             .explosion-phase {
-              left: 50%;
-              top: 40%;
-              transform: translate(-50%, -50%);
+              right: 5%;
+              top: 15%;
             }
             
             .explosion-img {
               width: 600px;
               height: auto;
               animation: explode 2s ease-out forwards;
+              /* Entferne Schachbrett-Hintergrund */
+              mix-blend-mode: screen;
+              filter: contrast(1.2) brightness(1.1);
             }
             
             /* Phase 3: 2026 Fallschirm */
