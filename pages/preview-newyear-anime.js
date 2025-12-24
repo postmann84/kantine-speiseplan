@@ -293,10 +293,10 @@ export default function PreviewNewYearAnime() {
         <div className="info">
           <strong>🎆 Professionelle anime.js Animation + Schweinchen 🐷</strong><br/>
           <span style={{fontSize: '14px', lineHeight: '1.8'}}>
-            Phase 1: Schweinchen-Rakete mit smooth anime.js Easing (3s)<br/>
+            Phase 1: Schweinchen-Rakete mit smooth anime.js Easing (5s)<br/>
             Phase 2: 80 bunte Partikel explodieren in alle Richtungen (2s)<br/>
             Phase 3: 15x "2026 🍀" fallen als animierter Konfetti (8s)<br/>
-            <em>✨ Keine PNG-Hintergründe · Flüssige Animationen · 13s Loop</em>
+            <em>✨ Keine PNG-Hintergründe · Flüssige Animationen · 15s Loop</em>
           </span>
         </div>
       </div>
