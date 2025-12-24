@@ -18,6 +18,12 @@ export default function Home() {
   const [showNewYear, setShowNewYear] = useState(false);
   const [newYearPhase, setNewYearPhase] = useState(1); // 1=Rakete, 2=Explosion, 3=2026 fällt
   
+  // Refs für anime.js Neujahrs-Animation
+  const newYearCanvasRef = useRef(null);
+  const newYearRocketRef = useRef(null);
+  const animeRef = useRef(null);
+  const staggerRef = useRef(null);
+  
   // Kiosk-Modus für Monitor-Anzeige
   const isKioskMode = router.query.kiosk === 'true';
   
