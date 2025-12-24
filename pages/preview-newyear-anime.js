@@ -4,18 +4,20 @@ export default function PreviewNewYearAnime() {
   const [phase, setPhase] = useState(1);
   const canvasRef = useRef(null);
   const rocketRef = useRef(null);
-  const animeRef = useRef(null);
+  const animateRef = useRef(null);
+  const staggerRef = useRef(null);
 
   useEffect(() => {
-    // Dynamisch anime.js laden
-    import('animejs').then(anime => {
-      animeRef.current = anime.default;
+    // Dynamisch anime.js v4 laden mit neuer API
+    import('animejs').then(module => {
+      animateRef.current = module.animate;
+      staggerRef.current = module.stagger;
       startAnimation();
     });
   }, []);
 
   const startAnimation = () => {
-    if (!animeRef.current) return;
+    if (!animateRef.current) return;
     
     setPhase(1);
     
@@ -40,11 +42,11 @@ export default function PreviewNewYearAnime() {
   };
 
   const animateRocket = () => {
-    const anime = animeRef.current;
-    if (!anime || !rocketRef.current) return;
+    const animate = animateRef.current;
+    if (!animate || !rocketRef.current) return;
     
-    anime({
-      targets: rocketRef.current,
+    // anime.js v4 API: animate(targets, options)
+    animate(rocketRef.current, {
       translateX: ['-300px', typeof window !== 'undefined' ? window.innerWidth + 'px' : '1500px'],
       translateY: ['0px', '-400px'],
       rotate: [-45, -45],
@@ -54,9 +56,10 @@ export default function PreviewNewYearAnime() {
   };
 
   const createFireworks = () => {
-    const anime = animeRef.current;
+    const animate = animateRef.current;
+    const stagger = staggerRef.current;
     const canvas = canvasRef.current;
-    if (!anime || !canvas) return;
+    if (!animate || !canvas) return;
     
     const ctx = canvas.getContext('2d');
     canvas.width = typeof window !== 'undefined' ? window.innerWidth : 1920;
@@ -93,16 +96,15 @@ export default function PreviewNewYearAnime() {
       });
     }
     
-    // Animate with anime.js
-    anime({
-      targets: particlesArray,
-      x: function(el) { return el.endX; },
-      y: function(el) { return el.endY; },
+    // anime.js v4 API: animate(targets, options)
+    animate(particlesArray, {
+      x: (el) => el.endX,
+      y: (el) => el.endY,
       radius: 0,
       duration: 2000,
       easing: 'easeOutExpo',
-      delay: anime.stagger(10),
-      update: function() {
+      delay: stagger ? stagger(10) : 0,
+      onUpdate: () => {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         particlesArray.forEach(p => p.draw());
       }
@@ -110,9 +112,10 @@ export default function PreviewNewYearAnime() {
   };
 
   const create2026Confetti = () => {
-    const anime = animeRef.current;
+    const animate = animateRef.current;
+    const stagger = staggerRef.current;
     const canvas = canvasRef.current;
-    if (!anime || !canvas) return;
+    if (!animate || !canvas) return;
     
     const ctx = canvas.getContext('2d');
     const confettiArray = [];
@@ -153,17 +156,16 @@ export default function PreviewNewYearAnime() {
       });
     }
     
-    // Animate falling confetti
-    anime({
-      targets: confettiArray,
+    // anime.js v4 API: animate(targets, options)
+    animate(confettiArray, {
       y: canvas.height + 200,
-      x: function(el) { return el.x + el.velocityX * 120; },
+      x: (el) => el.x + el.velocityX * 120,
       rotation: '+=1080',
       opacity: [1, 0.7],
       duration: 8000,
       easing: 'easeInQuad',
-      delay: anime.stagger(150),
-      update: function() {
+      delay: stagger ? stagger(150) : 0,
+      onUpdate: () => {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         confettiArray.forEach(c => c.draw());
       }
