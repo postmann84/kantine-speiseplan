@@ -51,8 +51,8 @@ export default function PreviewNewYearAnime() {
     // anime.js v4 API: animate(targets, options)
     // Rakete fliegt von unten links nach oben rechts diagonal
     animate(rocketRef.current, {
-      left: ['-300px', screenWidth + 300 + 'px'],
-      bottom: ['10%', screenHeight * 0.8 + 'px'],
+      translateX: [0, screenWidth + 600],
+      translateY: [0, -screenHeight * 0.7],
       duration: 3000,
       easing: 'easeInOutQuad'
     });
