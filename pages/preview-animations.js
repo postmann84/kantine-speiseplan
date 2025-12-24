@@ -188,20 +188,39 @@ export default function AnimationPreviews() {
           {/* Neujahrs-Animation */}
           <Link href="/preview-newyear" className="card">
             <div className="card-icon">🎆🐷🍀</div>
-            <h2 className="card-title">Silvester/Neujahrs-Animation</h2>
+            <h2 className="card-title">Silvester-Animation (PNG)</h2>
             <p className="card-description">
-              3-Phasen-Animation: Rakete fliegt, explodiert als Feuerwerk, 
+              3-Phasen-Animation mit PNG-Bildern: Rakete fliegt, explodiert als Feuerwerk, 
               2026 fällt mit Glücksklee-Fallschirm
             </p>
             <ul className="card-features">
-              <li>🚀 Phase 1: Schweinchen auf Rakete (5s)</li>
-              <li>💥 Phase 2: Feuerwerk-Explosion (2s)</li>
-              <li>🍀 Phase 3: 2026 mit Fallschirm (5s)</li>
+              <li>🚀 Phase 1: Schweinchen auf Rakete (3s)</li>
+              <li>💥 Phase 2: Feuerwerk-Bild (2s)</li>
+              <li>🍀 Phase 3: 10x 2026 mit Fallschirm (8s)</li>
               <li>📅 Aktiv: KW 1 (Woche mit 1. Januar)</li>
-              <li>🔄 Endlosschleife: 12s pro Durchlauf</li>
             </ul>
             <div className="card-button">
-              🎆 Preview ansehen →
+              🎆 PNG-Version →
+            </div>
+          </Link>
+
+          {/* Neujahrs-Animation mit anime.js */}
+          <Link href="/preview-newyear-anime" className="card" style={{ border: '3px solid #FFD700' }}>
+            <div className="card-icon">✨🎆💫</div>
+            <h2 className="card-title">Silvester mit anime.js 🆕</h2>
+            <p className="card-description">
+              Professionelle Animation mit anime.js Library: 
+              Smooth Rakete, echtes Partikel-Feuerwerk, animierter 2026-Konfetti
+            </p>
+            <ul className="card-features">
+              <li>✨ Smooth anime.js Easing</li>
+              <li>💥 Echtes Partikel-Feuerwerk (80 Partikel)</li>
+              <li>🎊 Animierter 2026-Text-Konfetti</li>
+              <li>🚀 Keine PNG-Hintergründe mehr!</li>
+              <li>⚡ Performance-optimiert</li>
+            </ul>
+            <div className="card-button" style={{ background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)' }}>
+              ✨ anime.js Version (NEU!) →
             </div>
           </Link>
         </div>
