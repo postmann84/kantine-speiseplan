@@ -185,25 +185,172 @@ export default function Home() {
     }
   };
 
-  // Neujahrs-Animation: 3 Phasen
-  const startNewYearAnimation = () => {
-    // Phase 1: Rakete fliegt diagonal nach oben (3 Sekunden - schneller!)
+  // Neujahrs-Animation: 3 Phasen mit anime.js
+  const startNewYearAnimation = async () => {
+    // Dynamisch anime.js laden
+    if (!animeRef.current) {
+      try {
+        const module = await import('animejs');
+        animeRef.current = module.animate;
+        staggerRef.current = module.stagger;
+      } catch (e) {
+        console.error('anime.js konnte nicht geladen werden:', e);
+        return;
+      }
+    }
+    
+    // Phase 1: Rakete fliegt diagonal nach oben (5 Sekunden)
     setNewYearPhase(1);
     
     setTimeout(() => {
-      // Phase 2: Explosion/Feuerwerk (2 Sekunden)
+      animateNewYearRocket();
+    }, 100);
+    
+    setTimeout(() => {
+      // Phase 2: Feuerwerk (2 Sekunden)
       setNewYearPhase(2);
+      createNewYearFireworks();
       
       setTimeout(() => {
-        // Phase 3: VIELE 2026er fallen runter (8 Sekunden)
+        // Phase 3: 2026 Konfetti fallen (8 Sekunden)
         setNewYearPhase(3);
+        createNewYear2026Confetti();
         
         setTimeout(() => {
           // Zurück zu Phase 1 und wiederholen
           startNewYearAnimation();
         }, 8000);
       }, 2000);
-    }, 3000);
+    }, 5000);
+  };
+  
+  // anime.js Raketen-Animation
+  const animateNewYearRocket = () => {
+    const animate = animeRef.current;
+    if (!animate || !newYearRocketRef.current) return;
+    
+    const screenWidth = typeof window !== 'undefined' ? window.innerWidth : 1920;
+    const screenHeight = typeof window !== 'undefined' ? window.innerHeight : 1080;
+    
+    animate(newYearRocketRef.current, {
+      translateX: [-100, screenWidth + 300],
+      translateY: [100, -screenHeight * 0.9],
+      duration: 5000,
+      easing: 'linear'
+    });
+  };
+  
+  // anime.js Feuerwerk-Animation
+  const createNewYearFireworks = () => {
+    const animate = animeRef.current;
+    const stagger = staggerRef.current;
+    const canvas = newYearCanvasRef.current;
+    if (!animate || !canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    canvas.width = typeof window !== 'undefined' ? window.innerWidth : 1920;
+    canvas.height = typeof window !== 'undefined' ? window.innerHeight : 1080;
+    
+    const particlesArray = [];
+    const numberOfParticles = 80;
+    const colors = ['#FF1461', '#18FF92', '#5A87FF', '#FBF38C', '#FF6B35'];
+    
+    // Explosion Position (oben rechts)
+    const explosionX = canvas.width * 0.85;
+    const explosionY = canvas.height * 0.2;
+    
+    for (let i = 0; i < numberOfParticles; i++) {
+      const angle = (Math.PI * 2 * i) / numberOfParticles;
+      const velocity = 150 + Math.random() * 100;
+      
+      particlesArray.push({
+        x: explosionX,
+        y: explosionY,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        radius: Math.random() * 4 + 2,
+        endX: explosionX + Math.cos(angle) * velocity,
+        endY: explosionY + Math.sin(angle) * velocity,
+        draw: function() {
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+          ctx.fillStyle = this.color;
+          ctx.shadowBlur = 15;
+          ctx.shadowColor = this.color;
+          ctx.fill();
+        }
+      });
+    }
+    
+    animate(particlesArray, {
+      x: (el) => el.endX,
+      y: (el) => el.endY,
+      radius: 0,
+      duration: 2000,
+      easing: 'easeOutExpo',
+      delay: stagger ? stagger(10) : 0,
+      onUpdate: () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        particlesArray.forEach(p => p.draw());
+      }
+    });
+  };
+  
+  // anime.js 2026 Konfetti-Animation
+  const createNewYear2026Confetti = () => {
+    const animate = animeRef.current;
+    const stagger = staggerRef.current;
+    const canvas = newYearCanvasRef.current;
+    if (!animate || !canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    const confettiArray = [];
+    
+    for (let i = 0; i < 15; i++) {
+      confettiArray.push({
+        x: Math.random() * canvas.width,
+        y: -100 - (i * 60),
+        rotation: Math.random() * 360,
+        scale: 0.6 + Math.random() * 0.5,
+        opacity: 1,
+        velocityX: (Math.random() - 0.5) * 3,
+        color: ['#FFD700', '#FFA500', '#FF6347', '#FF1493', '#00FF00'][Math.floor(Math.random() * 5)],
+        draw: function() {
+          ctx.save();
+          ctx.translate(this.x, this.y);
+          ctx.rotate(this.rotation * Math.PI / 180);
+          ctx.scale(this.scale, this.scale);
+          ctx.globalAlpha = this.opacity;
+          
+          ctx.font = 'bold 70px Arial';
+          ctx.fillStyle = this.color;
+          ctx.shadowBlur = 20;
+          ctx.shadowColor = this.color;
+          ctx.strokeStyle = '#FFF';
+          ctx.lineWidth = 4;
+          ctx.strokeText('2026', -60, 25);
+          ctx.fillText('2026', -60, 25);
+          
+          ctx.font = '40px Arial';
+          ctx.fillText('🍀', -20, -30);
+          
+          ctx.restore();
+        }
+      });
+    }
+    
+    animate(confettiArray, {
+      y: canvas.height + 200,
+      x: (el) => el.x + el.velocityX * 120,
+      rotation: '+=1080',
+      opacity: [1, 0.7],
+      duration: 8000,
+      easing: 'easeInQuad',
+      delay: stagger ? stagger(150) : 0,
+      onUpdate: () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        confettiArray.forEach(c => c.draw());
+      }
+    });
   };
 
   // Schneeflocken-Intervall: Alle 30 Sekunden für 5 Sekunden
