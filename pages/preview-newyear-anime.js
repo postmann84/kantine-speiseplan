@@ -49,12 +49,12 @@ export default function PreviewNewYearAnime() {
     const screenHeight = typeof window !== 'undefined' ? window.innerHeight : 1080;
     
     // anime.js v4 API: animate(targets, options)
-    // Rakete fliegt von unten links nach oben rechts diagonal
+    // Rakete fliegt von unten links (außerhalb) diagonal nach oben rechts (außerhalb)
     animate(rocketRef.current, {
-      translateX: [0, screenWidth + 600],
-      translateY: [0, -screenHeight * 0.7],
+      translateX: [-100, screenWidth + 300],
+      translateY: [100, -screenHeight * 0.9],
       duration: 3000,
-      easing: 'easeInOutQuad'
+      easing: 'linear'
     });
   };
 
