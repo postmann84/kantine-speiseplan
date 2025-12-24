@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import { getHolidaysForWeek } from '../lib/holidays';
 import { formatDate, isSameDay, formatFullDate } from '../lib/dateUtils';
