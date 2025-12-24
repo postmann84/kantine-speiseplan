@@ -216,7 +216,7 @@ export default function PreviewNewYearAnime() {
         
         .rocket {
           position: fixed;
-          bottom: 10%;
+          bottom: 5%;
           left: -300px;
           width: 250px;
           height: auto;
