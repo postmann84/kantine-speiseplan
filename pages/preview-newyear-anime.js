@@ -45,13 +45,16 @@ export default function PreviewNewYearAnime() {
     const animate = animateRef.current;
     if (!animate || !rocketRef.current) return;
     
+    const screenWidth = typeof window !== 'undefined' ? window.innerWidth : 1920;
+    const screenHeight = typeof window !== 'undefined' ? window.innerHeight : 1080;
+    
     // anime.js v4 API: animate(targets, options)
+    // Rakete fliegt von unten links nach oben rechts diagonal
     animate(rocketRef.current, {
-      translateX: ['-300px', typeof window !== 'undefined' ? window.innerWidth + 'px' : '1500px'],
-      translateY: ['0px', '-400px'],
-      rotate: [-45, -45],
+      left: ['-300px', screenWidth + 300 + 'px'],
+      bottom: ['10%', screenHeight * 0.8 + 'px'],
       duration: 3000,
-      easing: 'easeOutCubic'
+      easing: 'easeInOutQuad'
     });
   };
 
