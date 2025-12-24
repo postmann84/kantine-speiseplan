@@ -213,12 +213,13 @@ export default function PreviewNewYearAnime() {
         
         .rocket {
           position: fixed;
-          bottom: 50%;
+          bottom: 10%;
           left: -300px;
           width: 250px;
           height: auto;
           z-index: 10000;
           filter: drop-shadow(0 0 20px rgba(255,255,255,0.5));
+          transform: rotate(-45deg);
         }
         
         .canvas-container {
