@@ -21,24 +21,25 @@ export default function PreviewNewYearAnime() {
     
     setPhase(1);
     
-    // Phase 1: Rakete fliegt (5s - langsamer für bessere Sichtbarkeit)
+    // Phase 1: Rakete fliegt (4s)
     setTimeout(() => {
       animateRocket();
     }, 100);
     
+    // Feuerwerk startet GENAU wenn Rakete ankommt
     setTimeout(() => {
       setPhase(2);
       createFireworks();
-    }, 5000);
+    }, 4100);
     
     setTimeout(() => {
       setPhase(3);
       create2026Confetti();
-    }, 7000);
+    }, 6100);
     
     setTimeout(() => {
       startAnimation(); // Loop
-    }, 15000);
+    }, 14100);
   };
 
   const animateRocket = () => {
