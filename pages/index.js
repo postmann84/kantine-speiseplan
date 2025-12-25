@@ -199,15 +199,16 @@ export default function Home() {
       }
     }
     
-    // Phase 1: Rakete fliegt diagonal nach oben (5 Sekunden)
+    // Phase 1: Rakete fliegt diagonal nach oben (4 Sekunden)
     setNewYearPhase(1);
     
     setTimeout(() => {
       animateNewYearRocket();
     }, 100);
     
+    // Feuerwerk startet GENAU wenn Rakete ankommt (nach 4s Flugzeit)
     setTimeout(() => {
-      // Phase 2: Feuerwerk (2 Sekunden)
+      // Phase 2: Feuerwerk explodiert sofort (2 Sekunden)
       setNewYearPhase(2);
       createNewYearFireworks();
       
@@ -221,7 +222,7 @@ export default function Home() {
           startNewYearAnimation();
         }, 8000);
       }, 2000);
-    }, 5000);
+    }, 4100); // Rakete fliegt 4s, dann sofort Explosion
   };
   
   // anime.js Raketen-Animation
