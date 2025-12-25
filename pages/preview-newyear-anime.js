@@ -54,7 +54,7 @@ export default function PreviewNewYearAnime() {
     animate(rocketRef.current, {
       translateX: [-100, screenWidth + 300],
       translateY: [100, -screenHeight * 0.9],
-      duration: 5000,
+      duration: 4000, // 4 Sekunden Flugzeit
       easing: 'linear'
     });
   };
