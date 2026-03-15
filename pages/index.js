@@ -690,46 +690,88 @@ export default function Home() {
             </div>
           </div>
         ) : (
-          /* Normaler Modus: Logo links, Hauptinhalt rechts - professionell und symmetrisch */
-          <div className="flex items-center gap-4 mb-8">
-            {/* Logo links - mit Hintergrund für einheitliches Aussehen */}
-            <div className="flex-shrink-0 bg-white p-4 rounded-lg shadow-sm border border-gray-100">
-              <img 
-                src="/logo.png" 
-                alt="Rainer Westermann Kantine" 
-                className="h-36 w-auto"
-              />
-            </div>
-            {/* Hauptinhalt rechts - kompakter Info-Block */}
-            <div className="flex-1">
-              <div className="p-4 bg-white rounded-lg shadow-sm border border-gray-100 h-44 flex flex-col justify-center">
-                <h1 className="text-2xl font-bold text-gray-900 mb-3 text-center">Speiseplan</h1>
-                <div className="grid grid-cols-2 gap-4">
-                  {/* Linke Spalte: Öffnungszeiten */}
-                  <div>
-                    <h2 className="text-sm font-semibold text-gray-800 mb-1">Öffnungszeiten</h2>
-                    <div className="flex space-x-4 text-xs">
-                      <div>
-                        <span className="text-gray-600 font-medium">Frühstück:</span>
-                        <span className="text-gray-800 ml-1">07:00-10:00</span>
-                      </div>
-                      <div>
-                        <span className="text-gray-600 font-medium">Mittagstisch:</span>
-                        <span className="text-gray-800 ml-1">11:30-14:00</span>
-                      </div>
+          /* Normaler Modus: Responsive Layout für Desktop und Mobile */
+          <>
+            {/* Mobile Layout (unter md Breakpoint) */}
+            <div className="flex flex-col md:hidden gap-4 mb-4">
+              {/* Logo zentriert oben */}
+              <div className="flex justify-center bg-white p-3 rounded-lg shadow-sm border border-gray-100">
+                <img 
+                  src="/logo.png" 
+                  alt="Rainer Westermann Kantine" 
+                  className="h-20 w-auto"
+                />
+              </div>
+              
+              {/* Info-Block darunter */}
+              <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4">
+                <h1 className="text-xl font-bold text-gray-900 mb-3 text-center">Speiseplan</h1>
+                
+                {/* Öffnungszeiten */}
+                <div className="mb-3">
+                  <h2 className="text-sm font-semibold text-gray-800 mb-2 text-center">Öffnungszeiten</h2>
+                  <div className="flex justify-center gap-4 text-sm">
+                    <div className="text-center">
+                      <span className="text-gray-600 font-medium block">Frühstück</span>
+                      <span className="text-gray-800">07:00-10:00</span>
+                    </div>
+                    <div className="text-center">
+                      <span className="text-gray-600 font-medium block">Mittagstisch</span>
+                      <span className="text-gray-800">11:30-14:00</span>
                     </div>
                   </div>
-                  
-                  {/* Rechte Spalte: Kontaktinfo */}
-                  <div>
-                    <h2 className="text-sm font-semibold text-gray-800 mb-1">Kontakt</h2>
-                    <p className="text-gray-800 text-xs">Telefon: {menu.contactInfo?.phone}</p>
-                    <p className="text-gray-600 text-xs mt-1">Für Postfremde +{menu.contactInfo?.postcode}€</p>
+                </div>
+                
+                {/* Kontakt */}
+                <div className="border-t pt-3">
+                  <h2 className="text-sm font-semibold text-gray-800 mb-1 text-center">Kontakt</h2>
+                  <p className="text-gray-800 text-sm text-center">Tel: {menu.contactInfo?.phone}</p>
+                  <p className="text-gray-600 text-xs mt-1 text-center">Für Postfremde +{menu.contactInfo?.postcode}€</p>
+                </div>
+              </div>
+            </div>
+            
+            {/* Desktop Layout (ab md Breakpoint) */}
+            <div className="hidden md:flex items-center gap-4 mb-8">
+              {/* Logo links - mit Hintergrund für einheitliches Aussehen */}
+              <div className="flex-shrink-0 bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+                <img 
+                  src="/logo.png" 
+                  alt="Rainer Westermann Kantine" 
+                  className="h-36 w-auto"
+                />
+              </div>
+              {/* Hauptinhalt rechts - kompakter Info-Block */}
+              <div className="flex-1">
+                <div className="p-4 bg-white rounded-lg shadow-sm border border-gray-100 h-44 flex flex-col justify-center">
+                  <h1 className="text-2xl font-bold text-gray-900 mb-3 text-center">Speiseplan</h1>
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* Linke Spalte: Öffnungszeiten */}
+                    <div>
+                      <h2 className="text-sm font-semibold text-gray-800 mb-1">Öffnungszeiten</h2>
+                      <div className="flex space-x-4 text-xs">
+                        <div>
+                          <span className="text-gray-600 font-medium">Frühstück:</span>
+                          <span className="text-gray-800 ml-1">07:00-10:00</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-600 font-medium">Mittagstisch:</span>
+                          <span className="text-gray-800 ml-1">11:30-14:00</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Rechte Spalte: Kontaktinfo */}
+                    <div>
+                      <h2 className="text-sm font-semibold text-gray-800 mb-1">Kontakt</h2>
+                      <p className="text-gray-800 text-xs">Telefon: {menu.contactInfo?.phone}</p>
+                      <p className="text-gray-600 text-xs mt-1">Für Postfremde +{menu.contactInfo?.postcode}€</p>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
+          </>
         )}
       </header>
 
