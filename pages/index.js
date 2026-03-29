@@ -681,7 +681,7 @@ export default function Home() {
             {/* Logo on the left */}
             <div className="flex-shrink-0">
               <img 
-                src="/logo.png" 
+                src={currentLogo} 
                 alt="Rainer Westermann Kantine" 
                 className="h-12 sm:h-16 w-auto"
               />
@@ -712,7 +712,7 @@ export default function Home() {
               {/* Logo zentriert oben */}
               <div className="flex justify-center bg-white p-3 rounded-lg shadow-sm border border-gray-100">
                 <img 
-                  src="/logo.png" 
+                  src={currentLogo} 
                   alt="Rainer Westermann Kantine" 
                   className="h-20 w-auto"
                 />
@@ -751,7 +751,7 @@ export default function Home() {
               {/* Logo links - mit Hintergrund für einheitliches Aussehen */}
               <div className="flex-shrink-0 bg-white p-4 rounded-lg shadow-sm border border-gray-100">
                 <img 
-                  src="/logo.png" 
+                  src={currentLogo} 
                   alt="Rainer Westermann Kantine" 
                   className="h-36 w-auto"
                 />
