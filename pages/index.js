@@ -6,6 +6,18 @@ import { QRCodeSVG } from 'qrcode.react';
 import PrintMenu from '../components/PrintMenu';
 import { ALLERGENS, ADDITIVES, formatCodesInline } from '../lib/allergenTaxonomy';
 
+// Hilfsfunktion für saisonales Logo
+const getSeasonalLogo = () => {
+  const today = new Date();
+  // Oster-Logo bis einschließlich 07.04.2026
+  const easterEnd = new Date(2026, 3, 7, 23, 59, 59); // 7. April 2026, 23:59:59
+  
+  if (today <= easterEnd) {
+    return '/easter-logo.png';
+  }
+  return '/logo.png';
+};
+
 export default function Home() {
   const router = useRouter();
   const [menu, setMenu] = useState(null);
@@ -17,6 +29,9 @@ export default function Home() {
   const [showSnowflakes, setShowSnowflakes] = useState(false);
   const [showNewYear, setShowNewYear] = useState(false);
   const [newYearPhase, setNewYearPhase] = useState(1); // 1=Rakete, 2=Explosion, 3=2026 fällt
+  
+  // Saisonales Logo (Ostern bis 07.04.2026)
+  const currentLogo = getSeasonalLogo();
   
   // Refs für anime.js Neujahrs-Animation
   const newYearCanvasRef = useRef(null);
