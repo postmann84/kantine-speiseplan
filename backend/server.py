@@ -1,10 +1,11 @@
+import os
 from fastapi import FastAPI, Request
 from fastapi.responses import StreamingResponse
 import httpx
 
 app = FastAPI()
 
-NEXTJS_URL = "http://localhost:3000"
+NEXTJS_URL = os.getenv("NEXTJS_URL", "http://localhost:3000")
 
 @app.api_route("/api/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
 async def proxy_api(request: Request, path: str):
