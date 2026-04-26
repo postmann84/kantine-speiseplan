@@ -649,14 +649,14 @@ export default function Admin() {
         `
       }} />
       
-      <div className="max-w-4xl mx-auto p-4">
-        <div className="flex justify-between items-center mb-8 no-print">
-          <h1 className="text-2xl font-bold">Menü-Verwaltung</h1>
+      <div className="max-w-4xl mx-auto p-2 sm:p-4">
+        <div className="flex justify-between items-center mb-6 sm:mb-8 no-print">
+          <h1 className="text-xl sm:text-2xl font-bold">Menü-Verwaltung</h1>
         </div>
 
         {/* Wochenauswahl */}
-        <div className="bg-white p-6 rounded-lg shadow mb-6 no-print">
-          <div className="flex items-center justify-between">
+        <div className="bg-white p-4 sm:p-6 rounded-lg shadow mb-6 no-print">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex-1">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Kalenderwoche auswählen
@@ -667,7 +667,7 @@ export default function Admin() {
                   const [year, week] = e.target.value.split('-').map(Number);
                   setSelectedWeek({ year, week });
                 }}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm sm:text-base"
               >
                 {getWeekOptions().map((option) => (
                   <option 
@@ -680,7 +680,7 @@ export default function Admin() {
               </select>
             </div>
 
-            <div className="ml-4 flex items-center">
+            <div className="sm:ml-4 flex items-center">
               <label className="flex items-center gap-2 text-gray-700">
                 <input
                   type="checkbox"
@@ -772,9 +772,9 @@ export default function Admin() {
           )}
 
           {/* Contact Info */}
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h2 className="text-xl font-semibold mb-4 text-gray-900">Kontaktinformationen</h2>
-            <div className="grid grid-cols-2 gap-4">
+          <div className="bg-white p-4 sm:p-6 rounded-lg shadow">
+            <h2 className="text-lg sm:text-xl font-semibold mb-4 text-gray-900">Kontaktinformationen</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700">
                   Telefon
@@ -810,13 +810,13 @@ export default function Admin() {
             const holidayInfo = holidays[dateStr];
 
             return (
-              <div key={dayIndex} className="bg-white p-6 rounded-lg shadow mb-6">
+              <div key={dayIndex} className="bg-white p-3 sm:p-6 rounded-lg shadow mb-6">
                 <div className="flex flex-col gap-4">
                   {/* Tag und Schließtag-Checkbox */}
-                  <div className="flex items-center justify-between border-b pb-4">
-                    <h2 className="text-xl font-semibold">{day.day}</h2>
+                  <div className="flex items-center justify-between border-b pb-3 sm:pb-4">
+                    <h2 className="text-lg sm:text-xl font-semibold">{day.day}</h2>
                     
-                    <label className="flex items-center gap-2 text-gray-700 cursor-pointer">
+                    <label className="flex items-center gap-1.5 sm:gap-2 text-sm sm:text-base text-gray-700 cursor-pointer">
                       <input
                         type="checkbox"
                         checked={holidayInfo?.type === 'holiday' && holidayInfo?.isLegalHolidayInLowerSaxony ? true : day.isClosed || false}
@@ -851,8 +851,9 @@ export default function Admin() {
                   ) : (
                     <div className="space-y-4">
                       {day.meals.map((meal, mealIndex) => (
-                        <div key={mealIndex} className="mb-4">
-                          <div className="flex items-center gap-4">
+                        <div key={mealIndex} className="mb-2 sm:mb-4 border-b border-gray-100 pb-3 sm:pb-0 sm:border-0">
+                          {/* Zeile 1: Ideen-Button + Gericht-Input */}
+                          <div className="flex items-center gap-2 sm:gap-4">
                             {/* Ideen-Button */}
                             <button
                               type="button"
@@ -869,7 +870,7 @@ export default function Admin() {
                                 value={meal.name}
                                 onChange={(e) => handleMealChange(dayIndex, mealIndex, 'name', e.target.value)}
                                 onBlur={(e) => handleMealBlur(dayIndex, mealIndex, e.target.value)}
-                                className="w-full p-2 border rounded"
+                                className="w-full p-2 border rounded text-sm sm:text-base"
                                 placeholder="Gericht eingeben..."
                               />
                               
@@ -881,7 +882,7 @@ export default function Admin() {
                                    (!meal.additiveCodes || meal.additiveCodes.length === 0) && (
                                     <span 
                                       className="text-xs px-1 py-0.5 bg-yellow-100 text-yellow-800 border border-yellow-300 rounded"
-                                      title="⚠️ Keine Kennzeichnungen - wird beim Speichern automatisch analysiert"
+                                      title="Keine Kennzeichnungen"
                                     >
                                       ⚠️
                                     </span>
@@ -898,7 +899,7 @@ export default function Admin() {
                                         additives: meal.additiveCodes || []
                                       })}
                                       className="text-xs px-1 py-0.5 bg-green-100 text-green-800 border border-green-300 rounded hover:bg-green-200"
-                                      title="✓ Gekennzeichnet - Klicken zum Anzeigen"
+                                      title="Gekennzeichnet - Klicken zum Anzeigen"
                                       style={{ fontSize: '10px', lineHeight: '1' }}
                                     >
                                       <sup>{formatCodesInline(meal.allergenCodes, meal.additiveCodes)}</sup>
@@ -947,45 +948,47 @@ export default function Admin() {
                                 </div>
                               )}
                             </div>
-                            <div className="flex items-center gap-2">
-                              {meal.icon && <span className="text-2xl">{meal.icon}</span>}
+                          </div>
+                          {/* Zeile 2: Icon + Preis + Aktionsessen + Löschen */}
+                          <div className="flex items-center gap-2 mt-2 ml-10 sm:ml-12 flex-wrap">
+                            {meal.icon && <span className="text-xl sm:text-2xl">{meal.icon}</span>}
+                            <input
+                              type="number"
+                              value={meal.price}
+                              onChange={(e) => updateMeal(dayIndex, mealIndex, 'price', e.target.value)}
+                              className="w-20 sm:w-24 p-1.5 sm:p-2 border rounded text-sm"
+                              step="0.1"
+                              placeholder="Preis"
+                            />
+                            <label className="flex items-center gap-1.5 text-sm">
                               <input
-                                type="number"
-                                value={meal.price}
-                                onChange={(e) => updateMeal(dayIndex, mealIndex, 'price', e.target.value)}
-                                className="w-24 p-2 border rounded"
-                                step="0.1"
-                                placeholder="Preis"
+                                type="checkbox"
+                                checked={meal.isAction}
+                                onChange={(e) => handleActionChange(dayIndex, mealIndex, 'isAction', e.target.checked)}
+                                className="rounded border-gray-300"
                               />
-                              <label className="flex items-center gap-2">
-                                <input
-                                  type="checkbox"
-                                  checked={meal.isAction}
-                                  onChange={(e) => handleActionChange(dayIndex, mealIndex, 'isAction', e.target.checked)}
-                                  className="rounded border-gray-300"
-                                />
-                                <span>Aktionsessen</span>
-                              </label>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  if (confirm('Dieses Gericht wirklich löschen?')) {
-                                    removeMeal(dayIndex, mealIndex);
-                                  }
-                                }}
-                                className="ml-2 px-2 py-1 text-sm text-red-600 hover:text-red-800 border border-red-200 rounded hover:bg-red-50"
-                                title="Gericht löschen"
-                              >
-                                Löschen
-                              </button>
-                            </div>
+                              <span className="hidden sm:inline">Aktionsessen</span>
+                              <span className="sm:hidden">Aktion</span>
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (confirm('Dieses Gericht wirklich löschen?')) {
+                                  removeMeal(dayIndex, mealIndex);
+                                }
+                              }}
+                              className="px-2 py-1 text-xs sm:text-sm text-red-600 hover:text-red-800 border border-red-200 rounded hover:bg-red-50"
+                              title="Gericht löschen"
+                            >
+                              Löschen
+                            </button>
                           </div>
                           {meal.isAction && (
                             <input
                               type="text"
                               value={meal.actionNote}
                               onChange={(e) => handleActionChange(dayIndex, mealIndex, 'actionNote', e.target.value)}
-                              className="mt-2 w-full p-2 border rounded bg-yellow-50"
+                              className="mt-2 ml-10 sm:ml-12 w-auto flex-1 p-2 border rounded bg-yellow-50 text-sm"
                               placeholder="Aktionsnotiz eingeben..."
                             />
                           )}
@@ -1006,7 +1009,7 @@ export default function Admin() {
           })}
           
           {/* Buttons am Ende der Seite */}
-          <div className="mt-8 flex gap-4 justify-end">
+          <div className="mt-8 flex flex-col sm:flex-row gap-3 sm:gap-4 sm:justify-end">
             <button
               onClick={handlePrint}
               disabled={!isPublished}
@@ -1099,7 +1102,7 @@ export default function Admin() {
         {/* Ideen-Modal für Gerichts-Vorschläge */}
         {ideenModal.open && (
           <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50" data-testid="idea-modal-overlay">
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col" data-testid="idea-modal">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[85vh] mx-2 sm:mx-0 flex flex-col" data-testid="idea-modal">
               {/* Modal Header */}
               <div className="p-5 border-b">
                 <div className="flex items-center justify-between mb-4">
