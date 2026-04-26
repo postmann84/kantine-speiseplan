@@ -513,13 +513,14 @@ export default function Home() {
 
     return (
       <div key={index} className={`mb-4 rounded-lg shadow-md overflow-hidden
-        ${isCurrentDay ? 'ring-2 ring-blue-500' : ''}
-        ${isVacationDay ? 'bg-yellow-50 border-2 border-yellow-300' : 'bg-white'}`}
+        ${isCurrentDay ? 'ring-2 ring-blue-400 bg-blue-50/60' : ''}
+        ${isVacationDay ? 'bg-yellow-50 border-2 border-yellow-300' : !isCurrentDay ? 'bg-white' : ''}`}
       >
         <div className="p-4">
           <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold text-gray-900">
+            <h2 className={`text-xl text-gray-900 ${isCurrentDay ? 'font-bold' : 'font-semibold'}`}>
               {day.day} ({formatDate(dayDate)})
+              {isCurrentDay && <span className="ml-2 text-xs font-medium text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full align-middle">Heute</span>}
             </h2>
             
             {/* Feiertags-Badge - dezenteres Design */}
