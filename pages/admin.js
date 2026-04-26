@@ -1122,7 +1122,7 @@ export default function Admin() {
                     { icon: '🥗', label: 'Vegetarisch' },
                     { icon: '🐄', label: 'Rind' },
                     { icon: '🐟', label: 'Fisch' },
-                    { icon: '🥣', label: 'Suppe' },
+                    { icon: '🥣', label: 'Suppe/Eintopf' },
                     { icon: '🍝', label: 'Pasta' },
                   ].map(cat => {
                     const isActive = ideenModal.selectedCategory === cat.icon;
