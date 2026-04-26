@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Save, Loader, AlertCircle, Printer } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Save, Loader, AlertCircle, Printer, Lightbulb } from 'lucide-react';
 import { getHolidaysForWeek } from '../lib/holidays';
 import { formatDate, getWeekNumber, getWeekDates } from '../lib/dateUtils';
 import { ALLERGENS, ADDITIVES, formatCodesInline } from '../lib/allergenTaxonomy';
@@ -86,6 +86,62 @@ export default function Admin() {
 
   const [availableMenus, setAvailableMenus] = useState([]);
   const [selectedMenu, setSelectedMenu] = useState(null);
+
+  // Ideen-Modal State
+  const [ideenModal, setIdeenModal] = useState({
+    open: false,
+    dayIndex: null,
+    mealIndex: null,
+    selectedCategory: null,
+    searchTerm: ''
+  });
+  const [mealSuggestions, setMealSuggestions] = useState(null);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+
+  // Lade Gerichts-Vorschläge aus der DB
+  const fetchMealSuggestions = useCallback(async () => {
+    if (mealSuggestions) return; // Bereits geladen
+    setLoadingSuggestions(true);
+    try {
+      const response = await fetch('/api/meal-suggestions');
+      const data = await response.json();
+      if (data.success) {
+        setMealSuggestions(data.categories);
+      }
+    } catch (err) {
+      console.error('Fehler beim Laden der Vorschläge:', err);
+    } finally {
+      setLoadingSuggestions(false);
+    }
+  }, [mealSuggestions]);
+
+  // Ideen-Modal öffnen
+  const openIdeenModal = (dayIndex, mealIndex) => {
+    setIdeenModal({
+      open: true,
+      dayIndex,
+      mealIndex,
+      selectedCategory: null,
+      searchTerm: ''
+    });
+    fetchMealSuggestions();
+  };
+
+  // Gericht aus Modal übernehmen
+  const selectSuggestion = (meal) => {
+    const { dayIndex, mealIndex } = ideenModal;
+    setWeekMenu(prevMenu => {
+      const newMenu = [...prevMenu];
+      newMenu[dayIndex].meals[mealIndex] = {
+        ...newMenu[dayIndex].meals[mealIndex],
+        name: meal.name,
+        price: meal.price || newMenu[dayIndex].meals[mealIndex].price,
+        icon: meal.icon
+      };
+      return newMenu;
+    });
+    setIdeenModal(prev => ({ ...prev, open: false }));
+  };
 
   // Standardpreise als Konstanten
   const DEFAULT_PRICES = {
@@ -797,6 +853,16 @@ export default function Admin() {
                       {day.meals.map((meal, mealIndex) => (
                         <div key={mealIndex} className="mb-4">
                           <div className="flex items-center gap-4">
+                            {/* Ideen-Button */}
+                            <button
+                              type="button"
+                              data-testid={`idea-btn-${dayIndex}-${mealIndex}`}
+                              onClick={() => openIdeenModal(dayIndex, mealIndex)}
+                              className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-amber-50 text-amber-600 hover:bg-amber-100 hover:text-amber-700 border border-amber-200 transition-colors"
+                              title="Gerichts-Ideen"
+                            >
+                              <Lightbulb className="w-4 h-4" />
+                            </button>
                             <div className="flex-1 relative">
                               <input
                                 type="text"
@@ -1025,6 +1091,163 @@ export default function Admin() {
                   className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
                   onClick={() => setAllergenPopup(prev => ({ ...prev, open: false }))}
                 >OK</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Ideen-Modal für Gerichts-Vorschläge */}
+        {ideenModal.open && (
+          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50" data-testid="idea-modal-overlay">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col" data-testid="idea-modal">
+              {/* Modal Header */}
+              <div className="p-5 border-b">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold flex items-center gap-2">
+                    <Lightbulb className="w-5 h-5 text-amber-500" />
+                    Gerichts-Ideen
+                  </h3>
+                  <button
+                    data-testid="idea-modal-close"
+                    className="text-gray-400 hover:text-gray-600 text-xl leading-none"
+                    onClick={() => setIdeenModal(prev => ({ ...prev, open: false }))}
+                  >✕</button>
+                </div>
+
+                {/* Kategorie-Buttons */}
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { icon: '🐷', label: 'Schwein' },
+                    { icon: '🐔', label: 'Huhn' },
+                    { icon: '🥗', label: 'Vegetarisch' },
+                    { icon: '🐄', label: 'Rind' },
+                    { icon: '🐟', label: 'Fisch' },
+                    { icon: '🥣', label: 'Suppe' },
+                    { icon: '🍝', label: 'Pasta' },
+                  ].map(cat => {
+                    const isActive = ideenModal.selectedCategory === cat.icon;
+                    const count = mealSuggestions?.[cat.icon]?.meals?.length || 0;
+                    return (
+                      <button
+                        key={cat.icon}
+                        type="button"
+                        data-testid={`idea-cat-${cat.label.toLowerCase()}`}
+                        onClick={() => setIdeenModal(prev => ({
+                          ...prev,
+                          selectedCategory: prev.selectedCategory === cat.icon ? null : cat.icon,
+                          searchTerm: ''
+                        }))}
+                        className={`px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-all ${
+                          isActive
+                            ? 'bg-amber-100 text-amber-800 border-2 border-amber-400 shadow-sm'
+                            : 'bg-gray-50 text-gray-700 border border-gray-200 hover:bg-gray-100'
+                        }`}
+                      >
+                        <span className="text-lg">{cat.icon}</span>
+                        <span>{cat.label}</span>
+                        <span className={`text-xs px-1.5 py-0.5 rounded-full ${isActive ? 'bg-amber-200 text-amber-900' : 'bg-gray-200 text-gray-600'}`}>
+                          {count}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Suchfeld */}
+                {ideenModal.selectedCategory && (
+                  <div className="mt-3">
+                    <input
+                      type="text"
+                      data-testid="idea-search"
+                      placeholder="Gerichte filtern..."
+                      value={ideenModal.searchTerm}
+                      onChange={(e) => setIdeenModal(prev => ({ ...prev, searchTerm: e.target.value }))}
+                      className="w-full p-2 border rounded-lg text-sm focus:border-amber-400 focus:ring-1 focus:ring-amber-400 outline-none"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Modal Body */}
+              <div className="flex-1 overflow-y-auto p-4">
+                {loadingSuggestions ? (
+                  <div className="flex items-center justify-center py-12 text-gray-500">
+                    <Loader className="w-5 h-5 animate-spin mr-2" />
+                    Lade Vorschläge...
+                  </div>
+                ) : !ideenModal.selectedCategory ? (
+                  <div className="text-center py-12 text-gray-400">
+                    <span className="text-4xl block mb-3">☝️</span>
+                    <p>Bitte wählen Sie oben eine Kategorie aus</p>
+                  </div>
+                ) : (
+                  (() => {
+                    const catData = mealSuggestions?.[ideenModal.selectedCategory];
+                    if (!catData || catData.meals.length === 0) {
+                      return (
+                        <div className="text-center py-12 text-gray-400">
+                          Keine Gerichte in dieser Kategorie
+                        </div>
+                      );
+                    }
+
+                    const filtered = ideenModal.searchTerm
+                      ? catData.meals.filter(m =>
+                          m.name.toLowerCase().includes(ideenModal.searchTerm.toLowerCase())
+                        )
+                      : catData.meals;
+
+                    if (filtered.length === 0) {
+                      return (
+                        <div className="text-center py-8 text-gray-400">
+                          Kein Gericht passt zum Suchbegriff
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div className="space-y-1">
+                        {filtered.map((meal, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            data-testid={`idea-meal-${idx}`}
+                            onClick={() => selectSuggestion(meal)}
+                            className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-amber-50 border border-transparent hover:border-amber-200 transition-colors group flex items-center justify-between gap-3"
+                          >
+                            <div className="flex-1 min-w-0">
+                              <div className="text-sm font-medium text-gray-800 group-hover:text-amber-900 truncate">
+                                {meal.name}
+                              </div>
+                              <div className="text-xs text-gray-400 mt-0.5 flex items-center gap-3">
+                                <span>{meal.count}x serviert</span>
+                                {meal.weeksAgo !== null && (
+                                  <span>
+                                    zuletzt vor {meal.weeksAgo === 0 ? 'dieser Woche' : meal.weeksAgo === 1 ? '1 Woche' : `${meal.weeksAgo} Wochen`}
+                                    {meal.lastServedWeek && ` (KW ${meal.lastServedWeek}/${meal.lastServedYear})`}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex-shrink-0 text-xs text-gray-400 group-hover:text-amber-600">
+                              {meal.price?.toFixed(2)} €
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    );
+                  })()
+                )}
+              </div>
+
+              {/* Modal Footer */}
+              <div className="p-3 border-t bg-gray-50 rounded-b-xl text-right">
+                <button
+                  type="button"
+                  data-testid="idea-modal-cancel"
+                  className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
+                  onClick={() => setIdeenModal(prev => ({ ...prev, open: false }))}
+                >Abbrechen</button>
               </div>
             </div>
           </div>
