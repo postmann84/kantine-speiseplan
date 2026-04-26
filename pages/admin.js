@@ -127,7 +127,7 @@ export default function Admin() {
     fetchMealSuggestions();
   };
 
-  // Gericht aus Modal übernehmen
+  // Gericht aus Modal übernehmen (ohne Preis)
   const selectSuggestion = (meal) => {
     const { dayIndex, mealIndex } = ideenModal;
     setWeekMenu(prevMenu => {
@@ -135,7 +135,6 @@ export default function Admin() {
       newMenu[dayIndex].meals[mealIndex] = {
         ...newMenu[dayIndex].meals[mealIndex],
         name: meal.name,
-        price: meal.price || newMenu[dayIndex].meals[mealIndex].price,
         icon: meal.icon
       };
       return newMenu;
@@ -520,7 +519,8 @@ export default function Admin() {
         label: `KW ${week} (${formatDate(dates.start)} - ${formatDate(dates.end)})`,
         isPast: weekOffset < 0,
         isCurrent: weekOffset === 0,
-        isFuture: weekOffset > 0
+        isFuture: weekOffset > 0,
+        prefix: weekOffset < 0 ? 'Vergangen' : weekOffset === 0 ? 'Aktuell' : 'Kommend'
       });
     }
     
@@ -674,7 +674,7 @@ export default function Admin() {
                     key={`${option.year}-${option.week}`} 
                     value={`${option.year}-${option.week}`}
                   >
-                    {option.isPast ? '◀ ' : option.isCurrent ? '▶ ' : '▶▶ '}{option.label}
+                    {option.isCurrent ? '● ' : '  '}{option.label}{option.isCurrent ? '  ← aktuelle Woche' : ''}
                   </option>
                 ))}
               </select>
