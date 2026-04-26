@@ -852,136 +852,73 @@ export default function Admin() {
                     <div className="space-y-4">
                       {day.meals.map((meal, mealIndex) => (
                         <div key={mealIndex} className="mb-2 sm:mb-4 border-b border-gray-100 pb-3 sm:pb-0 sm:border-0">
-                          {/* Zeile 1: Ideen-Button + Gericht-Input */}
-                          <div className="flex items-center gap-2 sm:gap-4">
-                            {/* Ideen-Button */}
-                            <button
-                              type="button"
-                              data-testid={`idea-btn-${dayIndex}-${mealIndex}`}
-                              onClick={() => openIdeenModal(dayIndex, mealIndex)}
-                              className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-amber-50 text-amber-600 hover:bg-amber-100 hover:text-amber-700 border border-amber-200 transition-colors"
-                              title="Gerichts-Ideen"
-                            >
-                              <Lightbulb className="w-4 h-4" />
-                            </button>
-                            <div className="flex-1 relative">
-                              <input
-                                type="text"
-                                value={meal.name}
-                                onChange={(e) => handleMealChange(dayIndex, mealIndex, 'name', e.target.value)}
-                                onBlur={(e) => handleMealBlur(dayIndex, mealIndex, e.target.value)}
-                                className="w-full p-2 border rounded text-sm sm:text-base"
-                                placeholder="Gericht eingeben..."
-                              />
-                              
-                              {/* Allergen-Anzeige mit Status-Indikator */}
-                              {meal.name && meal.name.trim().length > 0 && (
-                                <div className="absolute right-2 top-1 flex items-center gap-1">
-                                  {/* Warnung wenn keine Kennzeichnungen */}
-                                  {(!meal.allergenCodes || meal.allergenCodes.length === 0) && 
-                                   (!meal.additiveCodes || meal.additiveCodes.length === 0) && (
-                                    <span 
-                                      className="text-xs px-1 py-0.5 bg-yellow-100 text-yellow-800 border border-yellow-300 rounded"
-                                      title="Keine Kennzeichnungen"
-                                    >
-                                      ⚠️
-                                    </span>
-                                  )}
-                                  
-                                  {/* Codes anzeigen wenn vorhanden */}
-                                  {(meal.allergenCodes?.length > 0 || meal.additiveCodes?.length > 0) && (
-                                    <button
-                                      type="button"
-                                      onClick={() => setAllergenPopup({
-                                        open: true,
-                                        mealName: meal.name,
-                                        allergens: meal.allergenCodes || [],
-                                        additives: meal.additiveCodes || []
-                                      })}
-                                      className="text-xs px-1 py-0.5 bg-green-100 text-green-800 border border-green-300 rounded hover:bg-green-200"
-                                      title="Gekennzeichnet - Klicken zum Anzeigen"
-                                      style={{ fontSize: '10px', lineHeight: '1' }}
-                                    >
-                                      <sup>{formatCodesInline(meal.allergenCodes, meal.additiveCodes)}</sup>
-                                    </button>
-                                  )}
-                                  
-                                  {/* Manuelle Re-Analyse Button */}
-                                  {meal.name && meal.name.trim().length > 0 && (
-                                    <button
-                                      type="button"
-                                      onClick={async () => {
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                            {/* Zeile 1 Mobile / Links Desktop: Ideen-Button + Input */}
+                            <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
+                              <button
+                                type="button"
+                                data-testid={`idea-btn-${dayIndex}-${mealIndex}`}
+                                onClick={() => openIdeenModal(dayIndex, mealIndex)}
+                                className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-amber-50 text-amber-600 hover:bg-amber-100 hover:text-amber-700 border border-amber-200 transition-colors"
+                                title="Gerichts-Ideen"
+                              >
+                                <Lightbulb className="w-4 h-4" />
+                              </button>
+                              <div className="flex-1 relative min-w-0">
+                                <input
+                                  type="text"
+                                  value={meal.name}
+                                  onChange={(e) => handleMealChange(dayIndex, mealIndex, 'name', e.target.value)}
+                                  onBlur={(e) => handleMealBlur(dayIndex, mealIndex, e.target.value)}
+                                  className="w-full p-2 border rounded text-sm sm:text-base"
+                                  placeholder="Gericht eingeben..."
+                                />
+                                {meal.name && meal.name.trim().length > 0 && (
+                                  <div className="absolute right-2 top-1 flex items-center gap-1">
+                                    {(!meal.allergenCodes || meal.allergenCodes.length === 0) && 
+                                     (!meal.additiveCodes || meal.additiveCodes.length === 0) && (
+                                      <span className="text-xs px-1 py-0.5 bg-yellow-100 text-yellow-800 border border-yellow-300 rounded" title="Keine Kennzeichnungen">⚠️</span>
+                                    )}
+                                    {(meal.allergenCodes?.length > 0 || meal.additiveCodes?.length > 0) && (
+                                      <button type="button" onClick={() => setAllergenPopup({ open: true, mealName: meal.name, allergens: meal.allergenCodes || [], additives: meal.additiveCodes || [] })} className="text-xs px-1 py-0.5 bg-green-100 text-green-800 border border-green-300 rounded hover:bg-green-200" style={{ fontSize: '10px', lineHeight: '1' }}>
+                                        <sup>{formatCodesInline(meal.allergenCodes, meal.additiveCodes)}</sup>
+                                      </button>
+                                    )}
+                                    {meal.name && meal.name.trim().length > 0 && (
+                                      <button type="button" onClick={async () => {
                                         setAnalyzingMeal(true);
                                         try {
-                                          const response = await fetch('/api/analyze-allergens-v2', {
-                                            method: 'POST',
-                                            headers: { 'Content-Type': 'application/json' },
-                                            body: JSON.stringify({ mealName: meal.name })
-                                          });
-                                          
+                                          const response = await fetch('/api/analyze-allergens-v2', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mealName: meal.name }) });
                                           if (response.ok) {
                                             const result = await response.json();
-                                            setWeekMenu(prevMenu => {
-                                              const newMenu = [...prevMenu];
-                                              newMenu[dayIndex].meals[mealIndex] = {
-                                                ...newMenu[dayIndex].meals[mealIndex],
-                                                allergenCodes: result.allergens || [],
-                                                additiveCodes: result.additives || []
-                                              };
-                                              return newMenu;
-                                            });
+                                            setWeekMenu(prevMenu => { const newMenu = [...prevMenu]; newMenu[dayIndex].meals[mealIndex] = { ...newMenu[dayIndex].meals[mealIndex], allergenCodes: result.allergens || [], additiveCodes: result.additives || [] }; return newMenu; });
                                             alert(`✅ ${result.allergens?.length || 0} Allergene und ${result.additives?.length || 0} Zusatzstoffe erkannt`);
                                           }
-                                        } catch (error) {
-                                          alert('❌ Analyse fehlgeschlagen');
-                                        } finally {
-                                          setAnalyzingMeal(false);
-                                        }
-                                      }}
-                                      className="text-xs px-1 py-0.5 bg-blue-100 text-blue-800 border border-blue-300 rounded hover:bg-blue-200"
-                                      title="Erneut analysieren"
-                                      disabled={analyzingMeal}
-                                    >
-                                      🔄
-                                    </button>
-                                  )}
-                                </div>
-                              )}
+                                        } catch (error) { alert('❌ Analyse fehlgeschlagen'); } finally { setAnalyzingMeal(false); }
+                                      }} className="text-xs px-1 py-0.5 bg-blue-100 text-blue-800 border border-blue-300 rounded hover:bg-blue-200" title="Erneut analysieren" disabled={analyzingMeal}>🔄</button>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                          {/* Zeile 2: Icon + Preis + Aktionsessen + Löschen */}
-                          <div className="flex items-center gap-2 mt-2 ml-10 sm:ml-12 flex-wrap">
-                            {meal.icon && <span className="text-xl sm:text-2xl">{meal.icon}</span>}
-                            <input
-                              type="number"
-                              value={meal.price}
-                              onChange={(e) => updateMeal(dayIndex, mealIndex, 'price', e.target.value)}
-                              className="w-20 sm:w-24 p-1.5 sm:p-2 border rounded text-sm"
-                              step="0.1"
-                              placeholder="Preis"
-                            />
-                            <label className="flex items-center gap-1.5 text-sm">
+                            {/* Zeile 2 Mobile / Rechts Desktop: Icon + Preis + Aktionsessen + Löschen */}
+                            <div className="flex items-center gap-2 ml-10 sm:ml-0 flex-shrink-0 flex-wrap">
+                              {meal.icon && <span className="text-xl sm:text-2xl">{meal.icon}</span>}
                               <input
-                                type="checkbox"
-                                checked={meal.isAction}
-                                onChange={(e) => handleActionChange(dayIndex, mealIndex, 'isAction', e.target.checked)}
-                                className="rounded border-gray-300"
+                                type="number"
+                                value={meal.price}
+                                onChange={(e) => updateMeal(dayIndex, mealIndex, 'price', e.target.value)}
+                                className="w-20 sm:w-24 p-1.5 sm:p-2 border rounded text-sm"
+                                step="0.1"
+                                placeholder="Preis"
                               />
-                              <span className="hidden sm:inline">Aktionsessen</span>
-                              <span className="sm:hidden">Aktion</span>
-                            </label>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (confirm('Dieses Gericht wirklich löschen?')) {
-                                  removeMeal(dayIndex, mealIndex);
-                                }
-                              }}
-                              className="px-2 py-1 text-xs sm:text-sm text-red-600 hover:text-red-800 border border-red-200 rounded hover:bg-red-50"
-                              title="Gericht löschen"
-                            >
-                              Löschen
-                            </button>
+                              <label className="flex items-center gap-1.5 text-sm">
+                                <input type="checkbox" checked={meal.isAction} onChange={(e) => handleActionChange(dayIndex, mealIndex, 'isAction', e.target.checked)} className="rounded border-gray-300" />
+                                <span className="hidden sm:inline">Aktionsessen</span>
+                                <span className="sm:hidden">Aktion</span>
+                              </label>
+                              <button type="button" onClick={() => { if (confirm('Dieses Gericht wirklich löschen?')) { removeMeal(dayIndex, mealIndex); } }} className="px-2 py-1 text-xs sm:text-sm text-red-600 hover:text-red-800 border border-red-200 rounded hover:bg-red-50" title="Gericht löschen">Löschen</button>
+                            </div>
                           </div>
                           {meal.isAction && (
                             <input
