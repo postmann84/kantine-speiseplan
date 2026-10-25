@@ -104,7 +104,8 @@ export default function Admin() {
   const [payrollSettings, setPayrollSettings] = useState({
     minimumWage: 13.90,
     monthlyLimit: 603.00,
-    defaultStartTime: '08:00',
+    openingStart: '07:00',
+    openingEnd: '14:00',
     breakMinutes: 0
   });
   const [empForm, setEmpForm] = useState({ _id: null, firstName: '', lastName: '', personnelNumber: '' });
@@ -113,6 +114,8 @@ export default function Admin() {
   const [tsData, setTsData] = useState(null);
   const [tsLoading, setTsLoading] = useState(false);
   const [personalSaving, setPersonalSaving] = useState(false);
+  const [pdfLogo, setPdfLogo] = useState(null);
+  const [yearDownloading, setYearDownloading] = useState(null);
 
   const MONTH_NAMES = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
 
@@ -135,7 +138,8 @@ export default function Admin() {
         setPayrollSettings({
           minimumWage: data.settings.minimumWage,
           monthlyLimit: data.settings.monthlyLimit,
-          defaultStartTime: data.settings.defaultStartTime || '08:00',
+          openingStart: data.settings.openingStart || '07:00',
+          openingEnd: data.settings.openingEnd || '14:00',
           breakMinutes: data.settings.breakMinutes || 0
         });
       }
@@ -164,6 +168,12 @@ export default function Admin() {
     fetchEmployees();
     fetchPayrollSettings();
     fetchTimesheet(tsYear, tsMonth);
+    // Logo einmalig für die PDF-Erzeugung vorladen
+    if (!pdfLogo) {
+      import('../lib/timesheetPdf').then(({ loadLogoDataUrl }) => {
+        loadLogoDataUrl().then((logo) => { if (logo) setPdfLogo(logo); });
+      });
+    }
   };
 
   // Mitarbeiter speichern (neu oder bearbeiten)
@@ -217,7 +227,8 @@ export default function Admin() {
         setPayrollSettings({
           minimumWage: data.settings.minimumWage,
           monthlyLimit: data.settings.monthlyLimit,
-          defaultStartTime: data.settings.defaultStartTime || '08:00',
+          openingStart: data.settings.openingStart || '07:00',
+          openingEnd: data.settings.openingEnd || '14:00',
           breakMinutes: data.settings.breakMinutes || 0
         });
         alert('Lohn-Einstellungen gespeichert.');
@@ -244,127 +255,64 @@ export default function Admin() {
   };
 
   const addMinutesToTime = (start, hoursDecimal, breakMin = 0) => {
-    const [h, m] = (start || '08:00').split(':').map(Number);
+    const [h, m] = (start || '07:00').split(':').map(Number);
     const totalMin = (h * 60) + m + Math.round(hoursDecimal * 60) + Number(breakMin || 0);
     const eh = Math.floor(totalMin / 60) % 24;
     const em = totalMin % 60;
     return `${String(eh).padStart(2, '0')}:${String(em).padStart(2, '0')}`;
   };
 
-  // Stundenzettel für einen Mitarbeiter erzeugen und als Druck-/PDF-Fenster öffnen
-  const generateTimesheet = (employee) => {
+  // Stundenzettel für einen Mitarbeiter als professionelles PDF herunterladen (aktueller Monat)
+  const generateTimesheet = async (employee) => {
     const calc = getTimesheetCalc();
     if (calc.numDays === 0) {
       alert('Für diesen Monat wurden keine Öffnungstage in der Speiseplan-Historie gefunden.');
       return;
     }
+    const { downloadMonthPdf, loadLogoDataUrl } = await import('../lib/timesheetPdf');
+    const logo = pdfLogo || await loadLogoDataUrl();
+    if (logo && !pdfLogo) setPdfLogo(logo);
+    downloadMonthPdf({
+      employee,
+      year: tsYear,
+      month: tsMonth,
+      workingDays: tsData.workingDays,
+      settings: payrollSettings,
+      logo
+    });
+  };
 
-    const weekdayNames = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
-    const start = payrollSettings.defaultStartTime || '08:00';
-    const breakMin = Number(payrollSettings.breakMinutes) || 0;
-    const end = addMinutesToTime(start, calc.hoursPerDay, breakMin);
+  // Ganzes Jahr als ZIP (je Monat eine PDF-Datei) für einen Mitarbeiter
+  const downloadTimesheetYear = async (employee) => {
+    setYearDownloading(employee._id);
+    try {
+      const { downloadYearZip, loadLogoDataUrl } = await import('../lib/timesheetPdf');
+      const logo = pdfLogo || await loadLogoDataUrl();
+      if (logo && !pdfLogo) setPdfLogo(logo);
 
-    const rows = tsData.workingDays.map((iso) => {
-      const d = new Date(iso + 'T12:00:00');
-      const dateStr = d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
-      return `<tr>
-        <td>${dateStr}</td>
-        <td>${weekdayNames[d.getDay()]}</td>
-        <td style="text-align:center">${start}</td>
-        <td style="text-align:center">${end}</td>
-        <td style="text-align:center">${breakMin} min</td>
-        <td style="text-align:center">${calc.hoursPerDay.toFixed(2).replace('.', ',')}</td>
-        <td></td>
-      </tr>`;
-    }).join('');
+      const fetchMonth = async (month) => {
+        const res = await fetch(`/api/timesheet?year=${tsYear}&month=${month}`);
+        const data = await res.json();
+        return data.success ? data.workingDays : [];
+      };
 
-    const fullName = `${employee.firstName} ${employee.lastName || ''}`.trim();
-    const monthLabel = `${MONTH_NAMES[tsMonth - 1]} ${tsYear}`;
+      const count = await downloadYearZip({
+        employee,
+        year: tsYear,
+        settings: payrollSettings,
+        logo,
+        fetchMonth
+      });
 
-    const html = `<!DOCTYPE html>
-<html lang="de"><head><meta charset="utf-8" />
-<title>Stundenzettel ${fullName} ${monthLabel}</title>
-<style>
-  * { box-sizing: border-box; }
-  body { font-family: Arial, Helvetica, sans-serif; color: #111; margin: 24px; font-size: 12px; }
-  h1 { font-size: 18px; margin: 0 0 2px; }
-  .sub { color: #555; margin-bottom: 14px; font-size: 12px; }
-  .meta { display: flex; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 8px; }
-  .meta div { line-height: 1.5; }
-  .meta .label { color: #666; font-size: 10px; text-transform: uppercase; letter-spacing: .04em; }
-  table { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
-  th, td { border: 1px solid #999; padding: 5px 7px; }
-  th { background: #f1f1f1; text-align: left; font-size: 11px; }
-  tfoot td { font-weight: bold; background: #fafafa; }
-  .summary { border: 1px solid #ccc; padding: 10px 12px; border-radius: 6px; background: #f8fafc; margin-bottom: 20px; }
-  .summary .row { display: flex; justify-content: space-between; padding: 2px 0; }
-  .sign { display: flex; justify-content: space-between; margin-top: 50px; gap: 40px; }
-  .sign div { flex: 1; border-top: 1px solid #333; padding-top: 4px; text-align: center; font-size: 11px; color: #333; }
-  .note { font-size: 10px; color: #777; margin-top: 10px; }
-  @media print { body { margin: 12mm; } button { display: none; } }
-</style></head>
-<body>
-  <h1>Stundenzettel / Arbeitszeitnachweis</h1>
-  <div class="sub">Rainer Westermann Kantine &middot; geringfügige Beschäftigung (Minijob)</div>
-
-  <div class="meta">
-    <div>
-      <div class="label">Mitarbeiter/in</div>
-      <strong>${fullName}</strong>
-      ${employee.personnelNumber ? `<br/>Personal-Nr.: ${employee.personnelNumber}` : ''}
-    </div>
-    <div>
-      <div class="label">Abrechnungsmonat</div>
-      <strong>${monthLabel}</strong>
-    </div>
-    <div>
-      <div class="label">Stundenlohn</div>
-      <strong>${calc.wage.toFixed(2).replace('.', ',')} €</strong>
-    </div>
-  </div>
-
-  <table>
-    <thead>
-      <tr>
-        <th>Datum</th><th>Wochentag</th><th>Beginn</th><th>Ende</th><th>Pause</th><th>Stunden</th><th>Unterschrift</th>
-      </tr>
-    </thead>
-    <tbody>${rows}</tbody>
-    <tfoot>
-      <tr>
-        <td colspan="5" style="text-align:right">Summe Stunden</td>
-        <td style="text-align:center">${calc.totalHours.toFixed(2).replace('.', ',')}</td>
-        <td></td>
-      </tr>
-    </tfoot>
-  </table>
-
-  <div class="summary">
-    <div class="row"><span>Arbeitstage im Monat (laut Speiseplan)</span><strong>${calc.numDays}</strong></div>
-    <div class="row"><span>Stunden pro Tag</span><strong>${calc.hoursPerDay.toFixed(2).replace('.', ',')} h</strong></div>
-    <div class="row"><span>Stunden gesamt</span><strong>${calc.totalHours.toFixed(2).replace('.', ',')} h</strong></div>
-    <div class="row"><span>Bruttolohn gesamt</span><strong>${calc.totalWage.toFixed(2).replace('.', ',')} €</strong></div>
-    <div class="row"><span>Minijob-Verdienstgrenze</span><strong>${calc.limit.toFixed(2).replace('.', ',')} €</strong></div>
-  </div>
-
-  <div class="sign">
-    <div>Datum, Unterschrift Mitarbeiter/in</div>
-    <div>Datum, Unterschrift Arbeitgeber</div>
-  </div>
-
-  <div class="note">Berechnung: Verdienstgrenze ${calc.limit.toFixed(2).replace('.', ',')} € ÷ Mindestlohn ${calc.wage.toFixed(2).replace('.', ',')} € = max. ${calc.maxHoursMonth.toFixed(2).replace('.', ',')} h/Monat, gleichmäßig auf die ${calc.numDays} Öffnungstage verteilt.</div>
-
-  <script>window.onload = function(){ setTimeout(function(){ window.print(); }, 300); };</script>
-</body></html>`;
-
-    const win = window.open('', '_blank');
-    if (!win) {
-      alert('Bitte Pop-ups für diese Seite erlauben, um den Stundenzettel zu öffnen.');
-      return;
+      if (count === 0) {
+        alert(`Für ${tsYear} wurden keine Öffnungstage in der Speiseplan-Historie gefunden.`);
+      }
+    } catch (err) {
+      console.error('Fehler beim Jahres-Download:', err);
+      alert('Fehler beim Erstellen der Jahres-ZIP.');
+    } finally {
+      setYearDownloading(null);
     }
-    win.document.open();
-    win.document.write(html);
-    win.document.close();
   };
 
   // Lade Gerichts-Vorschläge aus der DB
@@ -1431,7 +1379,7 @@ export default function Admin() {
                 {/* Abschnitt: Lohn-Einstellungen */}
                 <section>
                   <h4 className="font-semibold text-gray-800 mb-3">Lohn-Einstellungen (Minijob)</h4>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                     <div>
                       <label className="block text-xs text-gray-500 mb-1">Mindestlohn (€/h)</label>
                       <input
@@ -1453,13 +1401,23 @@ export default function Admin() {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs text-gray-500 mb-1">Beginn</label>
+                      <label className="block text-xs text-gray-500 mb-1">Öffnung von</label>
                       <input
                         type="time"
-                        value={payrollSettings.defaultStartTime}
-                        onChange={(e) => setPayrollSettings(prev => ({ ...prev, defaultStartTime: e.target.value }))}
+                        value={payrollSettings.openingStart}
+                        onChange={(e) => setPayrollSettings(prev => ({ ...prev, openingStart: e.target.value }))}
                         className="w-full rounded-md border-gray-300 border shadow-sm text-sm px-2 py-1.5"
-                        data-testid="start-time-input"
+                        data-testid="opening-start-input"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Öffnung bis</label>
+                      <input
+                        type="time"
+                        value={payrollSettings.openingEnd}
+                        onChange={(e) => setPayrollSettings(prev => ({ ...prev, openingEnd: e.target.value }))}
+                        className="w-full rounded-md border-gray-300 border shadow-sm text-sm px-2 py-1.5"
+                        data-testid="opening-end-input"
                       />
                     </div>
                     <div>
@@ -1473,6 +1431,7 @@ export default function Admin() {
                       />
                     </div>
                   </div>
+                  <p className="text-xs text-gray-400 mt-1">Öffnungszeiten entsprechen den Kantinen-Zeiten (Frühstück/Mittagstisch) und bestimmen den Arbeitsbeginn im Stundenzettel.</p>
                   <button
                     type="button"
                     onClick={savePayrollSettings}
@@ -1543,21 +1502,38 @@ export default function Admin() {
                       <p className="text-sm text-gray-500">Zuerst Mitarbeiter anlegen, um Stundenzettel zu erstellen.</p>
                     ) : (
                       employees.map((emp) => (
-                        <div key={emp._id} className="flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2">
+                        <div key={emp._id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between border border-gray-200 rounded-lg px-3 py-2 gap-2">
                           <span className="text-sm font-medium">{emp.firstName} {emp.lastName}</span>
-                          <button
-                            type="button"
-                            onClick={() => generateTimesheet(emp)}
-                            disabled={tsCalc.numDays === 0}
-                            className="flex items-center gap-1 px-3 py-1.5 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-300"
-                            data-testid="download-timesheet-btn"
-                          >
-                            <Download className="w-4 h-4" /> Stundenzettel
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => generateTimesheet(emp)}
+                              disabled={tsCalc.numDays === 0 || yearDownloading}
+                              className="flex items-center gap-1 px-3 py-1.5 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-300"
+                              data-testid="download-timesheet-btn"
+                            >
+                              <Download className="w-4 h-4" /> Monat (PDF)
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => downloadTimesheetYear(emp)}
+                              disabled={!!yearDownloading}
+                              className="flex items-center gap-1 px-3 py-1.5 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:bg-gray-300"
+                              data-testid="download-year-zip-btn"
+                              title={`Alle Monate ${tsYear} als ZIP (je Monat eine PDF)`}
+                            >
+                              {yearDownloading === emp._id ? (
+                                <><Loader className="w-4 h-4 animate-spin" /> erstelle…</>
+                              ) : (
+                                <><Download className="w-4 h-4" /> Jahr {tsYear} (ZIP)</>
+                              )}
+                            </button>
+                          </div>
                         </div>
                       ))
                     )}
                   </div>
+                  <p className="text-xs text-gray-400 mt-2">„Jahr (ZIP)“ lädt für {tsYear} je Monat eine eigene PDF-Datei gebündelt herunter.</p>
                 </section>
               </div>
             </div>

@@ -27,13 +27,15 @@ export default async function handler(req, res) {
   // POST: Lohn-Einstellungen aktualisieren
   if (req.method === 'POST') {
     try {
-      const { minimumWage, monthlyLimit, defaultStartTime, breakMinutes } = req.body;
+      const { minimumWage, monthlyLimit, defaultStartTime, breakMinutes, openingStart, openingEnd } = req.body;
       const settings = await getOrCreateSettings();
 
       if (minimumWage !== undefined) settings.minimumWage = Number(minimumWage);
       if (monthlyLimit !== undefined) settings.monthlyLimit = Number(monthlyLimit);
       if (defaultStartTime !== undefined) settings.defaultStartTime = defaultStartTime;
       if (breakMinutes !== undefined) settings.breakMinutes = Number(breakMinutes);
+      if (openingStart !== undefined) settings.openingStart = openingStart;
+      if (openingEnd !== undefined) settings.openingEnd = openingEnd;
 
       await settings.save();
       return res.status(200).json({ success: true, settings });

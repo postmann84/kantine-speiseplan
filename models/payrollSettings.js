@@ -18,6 +18,15 @@ const PayrollSettingsSchema = new mongoose.Schema({
     type: String,
     default: '08:00'
   },
+  // Öffnungszeiten der Kantine (für den Stundenzettel-Arbeitsbeginn)
+  openingStart: {
+    type: String,
+    default: '07:00'
+  },
+  openingEnd: {
+    type: String,
+    default: '14:00'
+  },
   // Pause in Minuten pro Arbeitstag
   breakMinutes: {
     type: Number,

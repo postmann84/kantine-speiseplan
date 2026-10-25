@@ -20,6 +20,14 @@ Next.js-Monolith-Anwendung für die Verwaltung und Anzeige eines Wochenspeisepla
 
 ## Implementierte Features
 
+### Personal & Stundenzettel – PDF-Erweiterung (Juni 2026)
+- **Professionelle PDF-Erzeugung** via `lib/timesheetPdf.js` (jspdf + jspdf-autotable + jszip, dynamisch importiert → nicht im Hauptbundle).
+- **Layout**: Firmen-Logo (aus `/public/logo.png`, clientseitig verkleinert), Firmenkopf „Rainer Westermann Kantine / Inhaber: Rainer Westermann", Titel „Arbeitszeitnachweis / Stundenzettel", Hinweis „§ 17 MiLoG", Info-Block, Tabelle (Datum, Wochentag, Beginn, Ende, Pause, Arbeitszeit) + Summe, Zusammenfassungs-Box, Unterschriftszeilen (Arbeitnehmer/in + „Rainer Westermann (Inhaber)" als Arbeitgeber), rechtliche Fußzeile (§ 17 MiLoG, 2 Jahre Aufbewahrung). Passt für Monate bis ~23 Öffnungstage auf eine Seite.
+- **Öffnungszeiten**: In den Lohn-Einstellungen hinterlegt (`openingStart`/`openingEnd`, Default 07:00–14:00 = Kantinen-Öffnungszeiten) und bestimmen den Arbeitsbeginn im Stundenzettel.
+- **Einzel-Download**: „Monat (PDF)" lädt eine echte PDF-Datei (`doc.save`).
+- **Bulk-Download**: „Jahr (ZIP)" erzeugt für das gewählte Jahr je Monat mit Öffnungstagen eine eigene PDF und bündelt alle in einer ZIP (Monate ohne Historie werden übersprungen).
+- **Testing**: PDFs per pdftoppm visuell geprüft (Einzelseite + ZIP mit 10 Monaten), Downloads per Playwright verifiziert.
+
 ### Personal & Stundenzettel (Minijob) (Juni 2026)
 - **Ziel**: Im Admin-Bereich Mitarbeiter (geringfügig Beschäftigte / Minijob) verwalten und monatliche Stundenzettel aus der Speiseplan-Historie erzeugen.
 - **Button**: "Personal & Stundenzettel" oben rechts im Admin-Header öffnet ein Modal.
