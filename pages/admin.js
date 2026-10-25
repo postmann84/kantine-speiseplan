@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Save, Loader, AlertCircle, Printer, Lightbulb } from 'lucide-react';
+import { Save, Loader, AlertCircle, Printer, Lightbulb, Users, Clock, Download, Trash2, Plus, X } from 'lucide-react';
 import { getHolidaysForWeek } from '../lib/holidays';
 import { formatDate, getWeekNumber, getWeekDates } from '../lib/dateUtils';
 import { ALLERGENS, ADDITIVES, formatCodesInline } from '../lib/allergenTaxonomy';
@@ -97,6 +97,275 @@ export default function Admin() {
   });
   const [mealSuggestions, setMealSuggestions] = useState(null);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+
+  // Personal- & Stundenzettel-Modal
+  const [personalModalOpen, setPersonalModalOpen] = useState(false);
+  const [employees, setEmployees] = useState([]);
+  const [payrollSettings, setPayrollSettings] = useState({
+    minimumWage: 13.90,
+    monthlyLimit: 603.00,
+    defaultStartTime: '08:00',
+    breakMinutes: 0
+  });
+  const [empForm, setEmpForm] = useState({ _id: null, firstName: '', lastName: '', personnelNumber: '' });
+  const [tsYear, setTsYear] = useState(() => new Date().getFullYear());
+  const [tsMonth, setTsMonth] = useState(() => new Date().getMonth() + 1);
+  const [tsData, setTsData] = useState(null);
+  const [tsLoading, setTsLoading] = useState(false);
+  const [personalSaving, setPersonalSaving] = useState(false);
+
+  const MONTH_NAMES = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+
+  // Daten für das Personal-Modal laden
+  const fetchEmployees = useCallback(async () => {
+    try {
+      const res = await fetch('/api/employees');
+      const data = await res.json();
+      if (data.success) setEmployees(data.employees);
+    } catch (err) {
+      console.error('Fehler beim Laden der Mitarbeiter:', err);
+    }
+  }, []);
+
+  const fetchPayrollSettings = useCallback(async () => {
+    try {
+      const res = await fetch('/api/payroll-settings');
+      const data = await res.json();
+      if (data.success && data.settings) {
+        setPayrollSettings({
+          minimumWage: data.settings.minimumWage,
+          monthlyLimit: data.settings.monthlyLimit,
+          defaultStartTime: data.settings.defaultStartTime || '08:00',
+          breakMinutes: data.settings.breakMinutes || 0
+        });
+      }
+    } catch (err) {
+      console.error('Fehler beim Laden der Lohn-Einstellungen:', err);
+    }
+  }, []);
+
+  const fetchTimesheet = useCallback(async (year, month) => {
+    setTsLoading(true);
+    try {
+      const res = await fetch(`/api/timesheet?year=${year}&month=${month}`);
+      const data = await res.json();
+      if (data.success) setTsData(data);
+      else setTsData(null);
+    } catch (err) {
+      console.error('Fehler beim Laden des Stundenzettels:', err);
+      setTsData(null);
+    } finally {
+      setTsLoading(false);
+    }
+  }, []);
+
+  const openPersonalModal = () => {
+    setPersonalModalOpen(true);
+    fetchEmployees();
+    fetchPayrollSettings();
+    fetchTimesheet(tsYear, tsMonth);
+  };
+
+  // Mitarbeiter speichern (neu oder bearbeiten)
+  const saveEmployee = async () => {
+    if (!empForm.firstName.trim()) {
+      alert('Bitte mindestens den Vornamen eingeben.');
+      return;
+    }
+    setPersonalSaving(true);
+    try {
+      const res = await fetch('/api/employees', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(empForm)
+      });
+      const data = await res.json();
+      if (data.success) {
+        setEmpForm({ _id: null, firstName: '', lastName: '', personnelNumber: '' });
+        fetchEmployees();
+      } else {
+        alert(data.error || 'Fehler beim Speichern');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Fehler beim Speichern des Mitarbeiters');
+    } finally {
+      setPersonalSaving(false);
+    }
+  };
+
+  const deleteEmployee = async (id) => {
+    if (!confirm('Diesen Mitarbeiter wirklich löschen?')) return;
+    try {
+      await fetch(`/api/employees?id=${id}`, { method: 'DELETE' });
+      fetchEmployees();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const savePayrollSettings = async () => {
+    setPersonalSaving(true);
+    try {
+      const res = await fetch('/api/payroll-settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payrollSettings)
+      });
+      const data = await res.json();
+      if (data.success && data.settings) {
+        setPayrollSettings({
+          minimumWage: data.settings.minimumWage,
+          monthlyLimit: data.settings.monthlyLimit,
+          defaultStartTime: data.settings.defaultStartTime || '08:00',
+          breakMinutes: data.settings.breakMinutes || 0
+        });
+        alert('Lohn-Einstellungen gespeichert.');
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setPersonalSaving(false);
+    }
+  };
+
+  // Berechnungen für den Stundenzettel
+  const getTimesheetCalc = () => {
+    const wage = Number(payrollSettings.minimumWage) || 0;
+    const limit = Number(payrollSettings.monthlyLimit) || 0;
+    const maxHoursMonth = wage > 0 ? limit / wage : 0;
+    const numDays = tsData?.workingDays?.length || 0;
+    // Pro-Tag-Stunden auf 2 Nachkommastellen abrunden, damit die Grenze nie überschritten wird
+    const hoursPerDay = numDays > 0 ? Math.floor((maxHoursMonth / numDays) * 100) / 100 : 0;
+    const totalHours = Math.round(hoursPerDay * numDays * 100) / 100;
+    const totalWage = Math.round(totalHours * wage * 100) / 100;
+    const weeklyHours = Math.round((totalHours / 4.33) * 100) / 100;
+    return { wage, limit, maxHoursMonth, numDays, hoursPerDay, totalHours, totalWage, weeklyHours };
+  };
+
+  const addMinutesToTime = (start, hoursDecimal, breakMin = 0) => {
+    const [h, m] = (start || '08:00').split(':').map(Number);
+    const totalMin = (h * 60) + m + Math.round(hoursDecimal * 60) + Number(breakMin || 0);
+    const eh = Math.floor(totalMin / 60) % 24;
+    const em = totalMin % 60;
+    return `${String(eh).padStart(2, '0')}:${String(em).padStart(2, '0')}`;
+  };
+
+  // Stundenzettel für einen Mitarbeiter erzeugen und als Druck-/PDF-Fenster öffnen
+  const generateTimesheet = (employee) => {
+    const calc = getTimesheetCalc();
+    if (calc.numDays === 0) {
+      alert('Für diesen Monat wurden keine Öffnungstage in der Speiseplan-Historie gefunden.');
+      return;
+    }
+
+    const weekdayNames = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
+    const start = payrollSettings.defaultStartTime || '08:00';
+    const breakMin = Number(payrollSettings.breakMinutes) || 0;
+    const end = addMinutesToTime(start, calc.hoursPerDay, breakMin);
+
+    const rows = tsData.workingDays.map((iso) => {
+      const d = new Date(iso + 'T12:00:00');
+      const dateStr = d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      return `<tr>
+        <td>${dateStr}</td>
+        <td>${weekdayNames[d.getDay()]}</td>
+        <td style="text-align:center">${start}</td>
+        <td style="text-align:center">${end}</td>
+        <td style="text-align:center">${breakMin} min</td>
+        <td style="text-align:center">${calc.hoursPerDay.toFixed(2).replace('.', ',')}</td>
+        <td></td>
+      </tr>`;
+    }).join('');
+
+    const fullName = `${employee.firstName} ${employee.lastName || ''}`.trim();
+    const monthLabel = `${MONTH_NAMES[tsMonth - 1]} ${tsYear}`;
+
+    const html = `<!DOCTYPE html>
+<html lang="de"><head><meta charset="utf-8" />
+<title>Stundenzettel ${fullName} ${monthLabel}</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: Arial, Helvetica, sans-serif; color: #111; margin: 24px; font-size: 12px; }
+  h1 { font-size: 18px; margin: 0 0 2px; }
+  .sub { color: #555; margin-bottom: 14px; font-size: 12px; }
+  .meta { display: flex; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 8px; }
+  .meta div { line-height: 1.5; }
+  .meta .label { color: #666; font-size: 10px; text-transform: uppercase; letter-spacing: .04em; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
+  th, td { border: 1px solid #999; padding: 5px 7px; }
+  th { background: #f1f1f1; text-align: left; font-size: 11px; }
+  tfoot td { font-weight: bold; background: #fafafa; }
+  .summary { border: 1px solid #ccc; padding: 10px 12px; border-radius: 6px; background: #f8fafc; margin-bottom: 20px; }
+  .summary .row { display: flex; justify-content: space-between; padding: 2px 0; }
+  .sign { display: flex; justify-content: space-between; margin-top: 50px; gap: 40px; }
+  .sign div { flex: 1; border-top: 1px solid #333; padding-top: 4px; text-align: center; font-size: 11px; color: #333; }
+  .note { font-size: 10px; color: #777; margin-top: 10px; }
+  @media print { body { margin: 12mm; } button { display: none; } }
+</style></head>
+<body>
+  <h1>Stundenzettel / Arbeitszeitnachweis</h1>
+  <div class="sub">Rainer Westermann Kantine &middot; geringfügige Beschäftigung (Minijob)</div>
+
+  <div class="meta">
+    <div>
+      <div class="label">Mitarbeiter/in</div>
+      <strong>${fullName}</strong>
+      ${employee.personnelNumber ? `<br/>Personal-Nr.: ${employee.personnelNumber}` : ''}
+    </div>
+    <div>
+      <div class="label">Abrechnungsmonat</div>
+      <strong>${monthLabel}</strong>
+    </div>
+    <div>
+      <div class="label">Stundenlohn</div>
+      <strong>${calc.wage.toFixed(2).replace('.', ',')} €</strong>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Datum</th><th>Wochentag</th><th>Beginn</th><th>Ende</th><th>Pause</th><th>Stunden</th><th>Unterschrift</th>
+      </tr>
+    </thead>
+    <tbody>${rows}</tbody>
+    <tfoot>
+      <tr>
+        <td colspan="5" style="text-align:right">Summe Stunden</td>
+        <td style="text-align:center">${calc.totalHours.toFixed(2).replace('.', ',')}</td>
+        <td></td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <div class="summary">
+    <div class="row"><span>Arbeitstage im Monat (laut Speiseplan)</span><strong>${calc.numDays}</strong></div>
+    <div class="row"><span>Stunden pro Tag</span><strong>${calc.hoursPerDay.toFixed(2).replace('.', ',')} h</strong></div>
+    <div class="row"><span>Stunden gesamt</span><strong>${calc.totalHours.toFixed(2).replace('.', ',')} h</strong></div>
+    <div class="row"><span>Bruttolohn gesamt</span><strong>${calc.totalWage.toFixed(2).replace('.', ',')} €</strong></div>
+    <div class="row"><span>Minijob-Verdienstgrenze</span><strong>${calc.limit.toFixed(2).replace('.', ',')} €</strong></div>
+  </div>
+
+  <div class="sign">
+    <div>Datum, Unterschrift Mitarbeiter/in</div>
+    <div>Datum, Unterschrift Arbeitgeber</div>
+  </div>
+
+  <div class="note">Berechnung: Verdienstgrenze ${calc.limit.toFixed(2).replace('.', ',')} € ÷ Mindestlohn ${calc.wage.toFixed(2).replace('.', ',')} € = max. ${calc.maxHoursMonth.toFixed(2).replace('.', ',')} h/Monat, gleichmäßig auf die ${calc.numDays} Öffnungstage verteilt.</div>
+
+  <script>window.onload = function(){ setTimeout(function(){ window.print(); }, 300); };</script>
+</body></html>`;
+
+    const win = window.open('', '_blank');
+    if (!win) {
+      alert('Bitte Pop-ups für diese Seite erlauben, um den Stundenzettel zu öffnen.');
+      return;
+    }
+    win.document.open();
+    win.document.write(html);
+    win.document.close();
+  };
 
   // Lade Gerichts-Vorschläge aus der DB
   const fetchMealSuggestions = useCallback(async () => {
@@ -652,6 +921,17 @@ export default function Admin() {
       <div className="max-w-4xl mx-auto p-2 sm:p-4">
         <div className="flex justify-between items-center mb-6 sm:mb-8 no-print">
           <h1 className="text-xl sm:text-2xl font-bold">Menü-Verwaltung</h1>
+          <button
+            type="button"
+            onClick={openPersonalModal}
+            data-testid="open-personal-modal-btn"
+            className="flex items-center gap-2 px-3 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 shadow-sm"
+            title="Personal & Stundenzettel verwalten"
+          >
+            <Users className="w-4 h-4" />
+            <span className="hidden sm:inline">Personal &amp; Stundenzettel</span>
+            <span className="sm:hidden">Personal</span>
+          </button>
         </div>
 
         {/* Wochenauswahl */}
@@ -1035,6 +1315,255 @@ export default function Admin() {
             </div>
           </div>
         )}
+
+        {/* Personal- & Stundenzettel-Modal */}
+        {personalModalOpen && (() => {
+          const tsCalc = getTimesheetCalc();
+          return (
+          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 p-2 sm:p-4" data-testid="personal-modal-overlay">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col" data-testid="personal-modal">
+              {/* Header */}
+              <div className="flex items-center justify-between p-5 border-b">
+                <h3 className="text-lg font-semibold flex items-center gap-2">
+                  <Users className="w-5 h-5 text-indigo-600" />
+                  Personal &amp; Stundenzettel
+                </h3>
+                <button
+                  onClick={() => setPersonalModalOpen(false)}
+                  className="text-gray-400 hover:text-gray-700"
+                  data-testid="close-personal-modal-btn"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="p-5 overflow-y-auto space-y-8">
+                {/* Abschnitt: Mitarbeiter */}
+                <section>
+                  <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                    <Users className="w-4 h-4 text-indigo-500" /> Mitarbeiter
+                  </h4>
+
+                  <div className="space-y-2 mb-4">
+                    {employees.length === 0 && (
+                      <p className="text-sm text-gray-500">Noch keine Mitarbeiter angelegt.</p>
+                    )}
+                    {employees.map((emp) => (
+                      <div key={emp._id} className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg px-3 py-2" data-testid="employee-row">
+                        <div className="text-sm">
+                          <span className="font-medium">{emp.firstName} {emp.lastName}</span>
+                          {emp.personnelNumber && <span className="text-gray-500 ml-2">Nr. {emp.personnelNumber}</span>}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setEmpForm({ _id: emp._id, firstName: emp.firstName, lastName: emp.lastName || '', personnelNumber: emp.personnelNumber || '' })}
+                            className="text-xs px-2 py-1 text-indigo-600 border border-indigo-200 rounded hover:bg-indigo-50"
+                            data-testid="edit-employee-btn"
+                          >
+                            Bearbeiten
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => deleteEmployee(emp._id)}
+                            className="text-red-500 hover:text-red-700"
+                            data-testid="delete-employee-btn"
+                            title="Löschen"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Mitarbeiter-Formular */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <input
+                      type="text"
+                      placeholder="Vorname *"
+                      value={empForm.firstName}
+                      onChange={(e) => setEmpForm(prev => ({ ...prev, firstName: e.target.value }))}
+                      className="rounded-md border-gray-300 border shadow-sm text-sm px-3 py-2 focus:border-indigo-500 focus:ring-indigo-500"
+                      data-testid="employee-firstname-input"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Nachname"
+                      value={empForm.lastName}
+                      onChange={(e) => setEmpForm(prev => ({ ...prev, lastName: e.target.value }))}
+                      className="rounded-md border-gray-300 border shadow-sm text-sm px-3 py-2 focus:border-indigo-500 focus:ring-indigo-500"
+                      data-testid="employee-lastname-input"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Personal-Nr. (optional)"
+                      value={empForm.personnelNumber}
+                      onChange={(e) => setEmpForm(prev => ({ ...prev, personnelNumber: e.target.value }))}
+                      className="rounded-md border-gray-300 border shadow-sm text-sm px-3 py-2 focus:border-indigo-500 focus:ring-indigo-500"
+                      data-testid="employee-personnelnumber-input"
+                    />
+                  </div>
+                  <div className="mt-2 flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={saveEmployee}
+                      disabled={personalSaving}
+                      className="flex items-center gap-1 px-3 py-2 bg-indigo-600 text-white rounded-md text-sm hover:bg-indigo-700 disabled:bg-gray-400"
+                      data-testid="save-employee-btn"
+                    >
+                      <Plus className="w-4 h-4" />
+                      {empForm._id ? 'Mitarbeiter aktualisieren' : 'Mitarbeiter hinzufügen'}
+                    </button>
+                    {empForm._id && (
+                      <button
+                        type="button"
+                        onClick={() => setEmpForm({ _id: null, firstName: '', lastName: '', personnelNumber: '' })}
+                        className="px-3 py-2 text-sm text-gray-600 border border-gray-200 rounded-md hover:bg-gray-50"
+                      >
+                        Abbrechen
+                      </button>
+                    )}
+                  </div>
+                </section>
+
+                {/* Abschnitt: Lohn-Einstellungen */}
+                <section>
+                  <h4 className="font-semibold text-gray-800 mb-3">Lohn-Einstellungen (Minijob)</h4>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Mindestlohn (€/h)</label>
+                      <input
+                        type="number" step="0.01"
+                        value={payrollSettings.minimumWage}
+                        onChange={(e) => setPayrollSettings(prev => ({ ...prev, minimumWage: e.target.value }))}
+                        className="w-full rounded-md border-gray-300 border shadow-sm text-sm px-2 py-1.5"
+                        data-testid="minimum-wage-input"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Verdienstgrenze (€)</label>
+                      <input
+                        type="number" step="0.01"
+                        value={payrollSettings.monthlyLimit}
+                        onChange={(e) => setPayrollSettings(prev => ({ ...prev, monthlyLimit: e.target.value }))}
+                        className="w-full rounded-md border-gray-300 border shadow-sm text-sm px-2 py-1.5"
+                        data-testid="monthly-limit-input"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Beginn</label>
+                      <input
+                        type="time"
+                        value={payrollSettings.defaultStartTime}
+                        onChange={(e) => setPayrollSettings(prev => ({ ...prev, defaultStartTime: e.target.value }))}
+                        className="w-full rounded-md border-gray-300 border shadow-sm text-sm px-2 py-1.5"
+                        data-testid="start-time-input"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Pause (min)</label>
+                      <input
+                        type="number"
+                        value={payrollSettings.breakMinutes}
+                        onChange={(e) => setPayrollSettings(prev => ({ ...prev, breakMinutes: e.target.value }))}
+                        className="w-full rounded-md border-gray-300 border shadow-sm text-sm px-2 py-1.5"
+                        data-testid="break-minutes-input"
+                      />
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={savePayrollSettings}
+                    disabled={personalSaving}
+                    className="mt-2 px-3 py-1.5 text-sm bg-gray-700 text-white rounded-md hover:bg-gray-800 disabled:bg-gray-400"
+                    data-testid="save-payroll-settings-btn"
+                  >
+                    Einstellungen speichern
+                  </button>
+                </section>
+
+                {/* Abschnitt: Stundenzettel */}
+                <section>
+                  <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-indigo-500" /> Stundenzettel (monatsweise)
+                  </h4>
+
+                  <div className="flex flex-wrap items-end gap-3 mb-4">
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Monat</label>
+                      <select
+                        value={tsMonth}
+                        onChange={(e) => { const m = Number(e.target.value); setTsMonth(m); fetchTimesheet(tsYear, m); }}
+                        className="rounded-md border-gray-300 border shadow-sm text-sm px-2 py-1.5"
+                        data-testid="timesheet-month-select"
+                      >
+                        {MONTH_NAMES.map((name, i) => (
+                          <option key={i} value={i + 1}>{name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Jahr</label>
+                      <select
+                        value={tsYear}
+                        onChange={(e) => { const y = Number(e.target.value); setTsYear(y); fetchTimesheet(y, tsMonth); }}
+                        className="rounded-md border-gray-300 border shadow-sm text-sm px-2 py-1.5"
+                        data-testid="timesheet-year-select"
+                      >
+                        {[tsYear - 1, tsYear, tsYear + 1].filter((v, i, a) => a.indexOf(v) === i).sort().map((y) => (
+                          <option key={y} value={y}>{y}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Berechnungs-Übersicht */}
+                  <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-4 mb-4 text-sm" data-testid="timesheet-summary">
+                    {tsLoading ? (
+                      <div className="flex items-center gap-2 text-gray-500"><Loader className="w-4 h-4 animate-spin" /> Lade Öffnungstage…</div>
+                    ) : tsCalc.numDays === 0 ? (
+                      <p className="text-gray-600">Keine Öffnungstage für {MONTH_NAMES[tsMonth - 1]} {tsYear} in der Speiseplan-Historie gefunden.</p>
+                    ) : (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-1 gap-x-4">
+                        <div>Öffnungstage: <strong>{tsCalc.numDays}</strong></div>
+                        <div>max. Stunden/Monat: <strong>{tsCalc.maxHoursMonth.toFixed(2).replace('.', ',')} h</strong></div>
+                        <div>Stunden/Tag: <strong>{tsCalc.hoursPerDay.toFixed(2).replace('.', ',')} h</strong></div>
+                        <div>Stunden/Woche: <strong>ca. {tsCalc.weeklyHours.toFixed(2).replace('.', ',')} h</strong></div>
+                        <div>Stunden gesamt: <strong>{tsCalc.totalHours.toFixed(2).replace('.', ',')} h</strong></div>
+                        <div>Lohn gesamt: <strong>{tsCalc.totalWage.toFixed(2).replace('.', ',')} €</strong></div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Download pro Mitarbeiter */}
+                  <div className="space-y-2">
+                    {employees.length === 0 ? (
+                      <p className="text-sm text-gray-500">Zuerst Mitarbeiter anlegen, um Stundenzettel zu erstellen.</p>
+                    ) : (
+                      employees.map((emp) => (
+                        <div key={emp._id} className="flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2">
+                          <span className="text-sm font-medium">{emp.firstName} {emp.lastName}</span>
+                          <button
+                            type="button"
+                            onClick={() => generateTimesheet(emp)}
+                            disabled={tsCalc.numDays === 0}
+                            className="flex items-center gap-1 px-3 py-1.5 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-300"
+                            data-testid="download-timesheet-btn"
+                          >
+                            <Download className="w-4 h-4" /> Stundenzettel
+                          </button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </section>
+              </div>
+            </div>
+          </div>
+          );
+        })()}
 
         {/* Ideen-Modal für Gerichts-Vorschläge */}
         {ideenModal.open && (

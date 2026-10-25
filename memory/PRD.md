@@ -20,6 +20,16 @@ Next.js-Monolith-Anwendung für die Verwaltung und Anzeige eines Wochenspeisepla
 
 ## Implementierte Features
 
+### Personal & Stundenzettel (Minijob) (Juni 2026)
+- **Ziel**: Im Admin-Bereich Mitarbeiter (geringfügig Beschäftigte / Minijob) verwalten und monatliche Stundenzettel aus der Speiseplan-Historie erzeugen.
+- **Button**: "Personal & Stundenzettel" oben rechts im Admin-Header öffnet ein Modal.
+- **Mitarbeiter-CRUD**: `/api/employees` (GET/POST/DELETE), Model `models/employee.js` (Vorname, Nachname, Personal-Nr.).
+- **Lohn-Einstellungen**: `/api/payroll-settings`, Model `models/payrollSettings.js`. Standard (Stand 01.01.2026): Mindestlohn **13,90 €/h**, Minijob-Verdienstgrenze **603,00 €/Monat**. Editierbar (plus Beginn-Zeit & Pause).
+- **Öffnungstage**: `/api/timesheet?year=&month=` ermittelt die tatsächlichen Arbeitstage eines Monats aus der Speiseplan-Historie (Tage mit `!isClosed`, ohne gesetzliche Feiertage/Urlaub). WICHTIG: `weekStart` ist in Berliner Zeit gespeichert (Mo 00:00 Berlin = So 23:00 UTC); Server läuft in UTC → Normalisierung via `Intl` Europe/Berlin, sonst -1 Tag Verschiebung.
+- **Berechnung**: max. Stunden/Monat = Grenze ÷ Mindestlohn (603/13,90 = 43,38 h), gleichmäßig auf Öffnungstage verteilt (abgerundet, bleibt unter Grenze).
+- **Download**: Pro Mitarbeiter wird ein druckbarer Stundenzettel (neues Fenster, Browser-Druck/PDF) mit Datum, Wochentag, Beginn/Ende, Pause, Stunden, Summen und Unterschriftszeilen erzeugt.
+- **Testing**: Backend-APIs per curl + Frontend-Flow (Modal, Monatsauswahl, PDF-Popup) per Playwright-Screenshot verifiziert.
+
 ### Gerichts-Ideen-Feature (26.04.2026)
 - **API**: `/api/meal-suggestions` – Gruppiert 509 einzigartige Gerichte in 7 Kategorien
 - **Kategorien**: 🐷 Schwein (158), 🐔 Huhn (68), 🥗 Vegetarisch (60), 🐄 Rind (50), 🐟 Fisch (46), 🥣 Suppe/Eintopf (50), 🍝 Pasta (51)
@@ -55,6 +65,9 @@ WeekMenu: {
 - `POST /api/menu` – Menü speichern/aktualisieren
 - `GET /api/menu/:year/:week` – Menü nach KW
 - `GET /api/meal-suggestions` – Gerichts-Vorschläge nach Kategorie
+- `GET|POST|DELETE /api/employees` – Mitarbeiter-Verwaltung
+- `GET|POST /api/payroll-settings` – Lohn-Einstellungen (Minijob)
+- `GET /api/timesheet?year=&month=` – Öffnungstage/Arbeitstage eines Monats aus der Historie
 - `POST /api/analyze-allergens-v2` – Allergen-Analyse via OpenAI
 - `POST /api/analyze-meal` – Icon-Zuordnung via OpenAI
 
