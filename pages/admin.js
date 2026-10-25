@@ -1572,7 +1572,6 @@ export default function Admin() {
                         <div>Stunden/Tag: <strong>{tsCalc.hoursPerDay.toFixed(2).replace('.', ',')} h</strong></div>
                         <div>Stunden/Woche: <strong>ca. {tsCalc.weeklyHours.toFixed(2).replace('.', ',')} h</strong></div>
                         <div>Stunden gesamt: <strong>{tsCalc.totalHours.toFixed(2).replace('.', ',')} h</strong></div>
-                        <div>Lohn gesamt: <strong>{tsCalc.totalWage.toFixed(2).replace('.', ',')} €</strong></div>
                       </div>
                     )}
                   </div>
