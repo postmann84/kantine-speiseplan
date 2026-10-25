@@ -27,7 +27,8 @@ export default async function handler(req, res) {
   // POST: Lohn-Einstellungen aktualisieren
   if (req.method === 'POST') {
     try {
-      const { minimumWage, monthlyLimit, defaultStartTime, breakMinutes, openingStart, openingEnd } = req.body;
+      const { minimumWage, monthlyLimit, defaultStartTime, breakMinutes, openingStart, openingEnd,
+        fruehStart, fruehEnd, spaetStart, spaetEnd, ganztagsStart, ganztagsEnd } = req.body;
       const settings = await getOrCreateSettings();
 
       if (minimumWage !== undefined) settings.minimumWage = Number(minimumWage);
@@ -36,6 +37,12 @@ export default async function handler(req, res) {
       if (breakMinutes !== undefined) settings.breakMinutes = Number(breakMinutes);
       if (openingStart !== undefined) settings.openingStart = openingStart;
       if (openingEnd !== undefined) settings.openingEnd = openingEnd;
+      if (fruehStart !== undefined) settings.fruehStart = fruehStart;
+      if (fruehEnd !== undefined) settings.fruehEnd = fruehEnd;
+      if (spaetStart !== undefined) settings.spaetStart = spaetStart;
+      if (spaetEnd !== undefined) settings.spaetEnd = spaetEnd;
+      if (ganztagsStart !== undefined) settings.ganztagsStart = ganztagsStart;
+      if (ganztagsEnd !== undefined) settings.ganztagsEnd = ganztagsEnd;
 
       await settings.save();
       return res.status(200).json({ success: true, settings });

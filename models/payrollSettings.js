@@ -27,6 +27,13 @@ const PayrollSettingsSchema = new mongoose.Schema({
     type: String,
     default: '14:00'
   },
+  // Schicht-Zeitfenster (Randomizer bewegt sich innerhalb dieser Grenzen)
+  fruehStart: { type: String, default: '07:00' },
+  fruehEnd: { type: String, default: '11:00' },
+  spaetStart: { type: String, default: '11:00' },
+  spaetEnd: { type: String, default: '14:00' },
+  ganztagsStart: { type: String, default: '07:00' },
+  ganztagsEnd: { type: String, default: '13:30' },
   // Pause in Minuten pro Arbeitstag
   breakMinutes: {
     type: Number,

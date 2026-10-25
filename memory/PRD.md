@@ -20,6 +20,20 @@ Next.js-Monolith-Anwendung für die Verwaltung und Anzeige eines Wochenspeisepla
 
 ## Implementierte Features
 
+### Passwortschutz Admin-Bereich (Juni 2026)
+- **Gemeinsames Admin-Passwort** schützt `/admin` und alle schreibenden/Admin-APIs.
+- Dateien: `lib/auth.js` (jose JWT), `pages/api/auth/{login,logout,me}.js`, `pages/login.js`, `middleware.js`.
+- Session: signiertes JWT im httpOnly-Cookie `admin_session` (7 Tage). `AUTH_SECRET` + `ADMIN_PASSWORD` in `/app/.env.local` (Passwort: `Hagepatt12`, siehe test_credentials.md).
+- `middleware.js` leitet `/admin` ohne Login auf `/login` um und gibt bei geschützten APIs 401 zurück. Öffentlich bleiben: `GET /api/menu`, `GET /api/menu/:year/:week`, `/api/send-menu`, `/api/qr-code`.
+- Abmelden-Button im Admin-Header. Cookie `secure` nur über HTTPS (x-forwarded-proto), damit lokaler http-Test funktioniert.
+
+### Schichten & Randomizer für Stundenzettel (Juni 2026)
+- Pro Mitarbeiter wählbare **Schicht**: Frühschicht / Spätschicht / Ganztagsschicht (`shift` im Employee-Model).
+- Schicht-**Zeitfenster** global konfigurierbar in den Lohn-Einstellungen (Default: Früh 07:00–11:00, Spät 11:00–14:00, Ganztags 07:00–13:30).
+- **Randomizer** (`buildSchedule` in `lib/timesheetPdf.js`): verteilt die monatlichen Minijob-Stunden mit leichter Variation (±10 Min, 5-Min-Raster) auf die Öffnungstage; Beginn zufällig innerhalb des Schichtfensters. Summe bleibt immer unter der Verdienstgrenze.
+- **Deterministisch**: Seed = Mitarbeiter-ID + Jahr + Monat → gleicher Monat ergibt beim erneuten Download denselben (unterschriebenen) Zettel. Verifiziert.
+- Minijob-Grenze bleibt das Limit (Entscheidung des Nutzers): Schicht legt nur das Zeitfenster fest, nicht die Gesamtstunden.
+
 ### Personal & Stundenzettel – PDF-Erweiterung (Juni 2026)
 - **Professionelle PDF-Erzeugung** via `lib/timesheetPdf.js` (jspdf + jspdf-autotable + jszip, dynamisch importiert → nicht im Hauptbundle).
 - **Layout**: Firmen-Logo (aus `/public/logo.png`, clientseitig verkleinert), Firmenkopf „Rainer Westermann Kantine / Inhaber: Rainer Westermann", Titel „Arbeitszeitnachweis / Stundenzettel", Hinweis „§ 17 MiLoG", Info-Block, Tabelle (Datum, Wochentag, Beginn, Ende, Pause, Arbeitszeit) + Summe, Zusammenfassungs-Box, Unterschriftszeilen (Arbeitnehmer/in + „Rainer Westermann (Inhaber)" als Arbeitgeber), rechtliche Fußzeile (§ 17 MiLoG, 2 Jahre Aufbewahrung). Passt für Monate bis ~23 Öffnungstage auf eine Seite.

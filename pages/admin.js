@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Save, Loader, AlertCircle, Printer, Lightbulb, Users, Clock, Download, Trash2, Plus, X } from 'lucide-react';
+import { useRouter } from 'next/router';
+import { Save, Loader, AlertCircle, Printer, Lightbulb, Users, Clock, Download, Trash2, Plus, X, LogOut } from 'lucide-react';
 import { getHolidaysForWeek } from '../lib/holidays';
 import { formatDate, getWeekNumber, getWeekDates } from '../lib/dateUtils';
 import { ALLERGENS, ADDITIVES, formatCodesInline } from '../lib/allergenTaxonomy';
 
 export default function Admin() {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
@@ -106,9 +108,12 @@ export default function Admin() {
     monthlyLimit: 603.00,
     openingStart: '07:00',
     openingEnd: '14:00',
-    breakMinutes: 0
+    breakMinutes: 0,
+    fruehStart: '07:00', fruehEnd: '11:00',
+    spaetStart: '11:00', spaetEnd: '14:00',
+    ganztagsStart: '07:00', ganztagsEnd: '13:30'
   });
-  const [empForm, setEmpForm] = useState({ _id: null, firstName: '', lastName: '', personnelNumber: '' });
+  const [empForm, setEmpForm] = useState({ _id: null, firstName: '', lastName: '', personnelNumber: '', shift: 'ganztags' });
   const [tsYear, setTsYear] = useState(() => new Date().getFullYear());
   const [tsMonth, setTsMonth] = useState(() => new Date().getMonth() + 1);
   const [tsData, setTsData] = useState(null);
@@ -140,7 +145,13 @@ export default function Admin() {
           monthlyLimit: data.settings.monthlyLimit,
           openingStart: data.settings.openingStart || '07:00',
           openingEnd: data.settings.openingEnd || '14:00',
-          breakMinutes: data.settings.breakMinutes || 0
+          breakMinutes: data.settings.breakMinutes || 0,
+          fruehStart: data.settings.fruehStart || '07:00',
+          fruehEnd: data.settings.fruehEnd || '11:00',
+          spaetStart: data.settings.spaetStart || '11:00',
+          spaetEnd: data.settings.spaetEnd || '14:00',
+          ganztagsStart: data.settings.ganztagsStart || '07:00',
+          ganztagsEnd: data.settings.ganztagsEnd || '13:30'
         });
       }
     } catch (err) {
@@ -176,6 +187,13 @@ export default function Admin() {
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch (e) { /* ignore */ }
+    router.replace('/login');
+  };
+
   // Mitarbeiter speichern (neu oder bearbeiten)
   const saveEmployee = async () => {
     if (!empForm.firstName.trim()) {
@@ -191,7 +209,7 @@ export default function Admin() {
       });
       const data = await res.json();
       if (data.success) {
-        setEmpForm({ _id: null, firstName: '', lastName: '', personnelNumber: '' });
+        setEmpForm({ _id: null, firstName: '', lastName: '', personnelNumber: '', shift: 'ganztags' });
         fetchEmployees();
       } else {
         alert(data.error || 'Fehler beim Speichern');
@@ -229,7 +247,13 @@ export default function Admin() {
           monthlyLimit: data.settings.monthlyLimit,
           openingStart: data.settings.openingStart || '07:00',
           openingEnd: data.settings.openingEnd || '14:00',
-          breakMinutes: data.settings.breakMinutes || 0
+          breakMinutes: data.settings.breakMinutes || 0,
+          fruehStart: data.settings.fruehStart || '07:00',
+          fruehEnd: data.settings.fruehEnd || '11:00',
+          spaetStart: data.settings.spaetStart || '11:00',
+          spaetEnd: data.settings.spaetEnd || '14:00',
+          ganztagsStart: data.settings.ganztagsStart || '07:00',
+          ganztagsEnd: data.settings.ganztagsEnd || '13:30'
         });
         alert('Lohn-Einstellungen gespeichert.');
       }
@@ -869,17 +893,29 @@ export default function Admin() {
       <div className="max-w-4xl mx-auto p-2 sm:p-4">
         <div className="flex justify-between items-center mb-6 sm:mb-8 no-print">
           <h1 className="text-xl sm:text-2xl font-bold">Menü-Verwaltung</h1>
-          <button
-            type="button"
-            onClick={openPersonalModal}
-            data-testid="open-personal-modal-btn"
-            className="flex items-center gap-2 px-3 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 shadow-sm"
-            title="Personal & Stundenzettel verwalten"
-          >
-            <Users className="w-4 h-4" />
-            <span className="hidden sm:inline">Personal &amp; Stundenzettel</span>
-            <span className="sm:hidden">Personal</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={openPersonalModal}
+              data-testid="open-personal-modal-btn"
+              className="flex items-center gap-2 px-3 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 shadow-sm"
+              title="Personal & Stundenzettel verwalten"
+            >
+              <Users className="w-4 h-4" />
+              <span className="hidden sm:inline">Personal &amp; Stundenzettel</span>
+              <span className="sm:hidden">Personal</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleLogout}
+              data-testid="logout-btn"
+              className="flex items-center gap-2 px-3 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300"
+              title="Abmelden"
+            >
+              <LogOut className="w-4 h-4" />
+              <span className="hidden sm:inline">Abmelden</span>
+            </button>
+          </div>
         </div>
 
         {/* Wochenauswahl */}
@@ -1302,11 +1338,14 @@ export default function Admin() {
                         <div className="text-sm">
                           <span className="font-medium">{emp.firstName} {emp.lastName}</span>
                           {emp.personnelNumber && <span className="text-gray-500 ml-2">Nr. {emp.personnelNumber}</span>}
+                          <span className="ml-2 inline-block text-xs px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700">
+                            {emp.shift === 'frueh' ? 'Frühschicht' : emp.shift === 'spaet' ? 'Spätschicht' : 'Ganztagsschicht'}
+                          </span>
                         </div>
                         <div className="flex items-center gap-2">
                           <button
                             type="button"
-                            onClick={() => setEmpForm({ _id: emp._id, firstName: emp.firstName, lastName: emp.lastName || '', personnelNumber: emp.personnelNumber || '' })}
+                            onClick={() => setEmpForm({ _id: emp._id, firstName: emp.firstName, lastName: emp.lastName || '', personnelNumber: emp.personnelNumber || '', shift: emp.shift || 'ganztags' })}
                             className="text-xs px-2 py-1 text-indigo-600 border border-indigo-200 rounded hover:bg-indigo-50"
                             data-testid="edit-employee-btn"
                           >
@@ -1327,7 +1366,7 @@ export default function Admin() {
                   </div>
 
                   {/* Mitarbeiter-Formular */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
                     <input
                       type="text"
                       placeholder="Vorname *"
@@ -1352,6 +1391,16 @@ export default function Admin() {
                       className="rounded-md border-gray-300 border shadow-sm text-sm px-3 py-2 focus:border-indigo-500 focus:ring-indigo-500"
                       data-testid="employee-personnelnumber-input"
                     />
+                    <select
+                      value={empForm.shift}
+                      onChange={(e) => setEmpForm(prev => ({ ...prev, shift: e.target.value }))}
+                      className="rounded-md border-gray-300 border shadow-sm text-sm px-3 py-2 focus:border-indigo-500 focus:ring-indigo-500"
+                      data-testid="employee-shift-select"
+                    >
+                      <option value="frueh">Frühschicht</option>
+                      <option value="spaet">Spätschicht</option>
+                      <option value="ganztags">Ganztagsschicht</option>
+                    </select>
                   </div>
                   <div className="mt-2 flex items-center gap-2">
                     <button
@@ -1367,7 +1416,7 @@ export default function Admin() {
                     {empForm._id && (
                       <button
                         type="button"
-                        onClick={() => setEmpForm({ _id: null, firstName: '', lastName: '', personnelNumber: '' })}
+                        onClick={() => setEmpForm({ _id: null, firstName: '', lastName: '', personnelNumber: '', shift: 'ganztags' })}
                         className="px-3 py-2 text-sm text-gray-600 border border-gray-200 rounded-md hover:bg-gray-50"
                       >
                         Abbrechen
@@ -1432,6 +1481,38 @@ export default function Admin() {
                     </div>
                   </div>
                   <p className="text-xs text-gray-400 mt-1">Öffnungszeiten entsprechen den Kantinen-Zeiten (Frühstück/Mittagstisch) und bestimmen den Arbeitsbeginn im Stundenzettel.</p>
+
+                  <div className="mt-3">
+                    <p className="text-xs font-medium text-gray-600 mb-1">Schicht-Zeitfenster (Randomizer verteilt die Zeiten innerhalb dieser Grenzen)</p>
+                    <div className="grid grid-cols-3 gap-3">
+                      {[
+                        { key: 'frueh', label: 'Frühschicht' },
+                        { key: 'spaet', label: 'Spätschicht' },
+                        { key: 'ganztags', label: 'Ganztagsschicht' }
+                      ].map((s) => (
+                        <div key={s.key} className="border border-gray-200 rounded-md p-2">
+                          <div className="text-xs font-medium text-gray-700 mb-1">{s.label}</div>
+                          <div className="flex items-center gap-1">
+                            <input
+                              type="time"
+                              value={payrollSettings[`${s.key}Start`]}
+                              onChange={(e) => setPayrollSettings(prev => ({ ...prev, [`${s.key}Start`]: e.target.value }))}
+                              className="w-full rounded border-gray-300 border text-xs px-1 py-1"
+                              data-testid={`${s.key}-start-input`}
+                            />
+                            <span className="text-gray-400 text-xs">–</span>
+                            <input
+                              type="time"
+                              value={payrollSettings[`${s.key}End`]}
+                              onChange={(e) => setPayrollSettings(prev => ({ ...prev, [`${s.key}End`]: e.target.value }))}
+                              className="w-full rounded border-gray-300 border text-xs px-1 py-1"
+                              data-testid={`${s.key}-end-input`}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                   <button
                     type="button"
                     onClick={savePayrollSettings}

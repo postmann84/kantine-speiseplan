@@ -19,7 +19,7 @@ export default async function handler(req, res) {
   // POST: Mitarbeiter anlegen oder aktualisieren
   if (req.method === 'POST') {
     try {
-      const { _id, firstName, lastName, personnelNumber, note, isActive } = req.body;
+      const { _id, firstName, lastName, personnelNumber, note, isActive, shift } = req.body;
 
       if (!firstName || !firstName.trim()) {
         return res.status(400).json({ success: false, error: 'Vorname ist erforderlich' });
@@ -30,6 +30,7 @@ export default async function handler(req, res) {
         lastName: (lastName || '').trim(),
         personnelNumber: personnelNumber || '',
         note: note || '',
+        shift: ['frueh', 'spaet', 'ganztags'].includes(shift) ? shift : 'ganztags',
         isActive: isActive !== undefined ? isActive : true
       };
 

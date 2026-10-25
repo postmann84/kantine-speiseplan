@@ -20,6 +20,11 @@ const EmployeeSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  // Schicht: 'frueh' | 'spaet' | 'ganztags'
+  shift: {
+    type: String,
+    default: 'ganztags'
+  },
   isActive: {
     type: Boolean,
     default: true
