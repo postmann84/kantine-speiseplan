@@ -25,6 +25,21 @@ const EmployeeSchema = new mongoose.Schema({
     type: String,
     default: 'ganztags'
   },
+  // Optionaler eigener Monats-Stundendeckel (0 = volle Minijob-Grenze)
+  maxMonthlyHours: {
+    type: Number,
+    default: 0
+  },
+  // true = Anwesenheitstage werden pro Monat manuell angekreuzt
+  manualDays: {
+    type: Boolean,
+    default: false
+  },
+  // Angekreuzte Anwesenheitstage je Monat: { 'YYYY-MM': ['YYYY-MM-DD', ...] }
+  presence: {
+    type: mongoose.Schema.Types.Mixed,
+    default: {}
+  },
   isActive: {
     type: Boolean,
     default: true

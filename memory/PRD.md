@@ -20,6 +20,13 @@ Next.js-Monolith-Anwendung für die Verwaltung und Anzeige eines Wochenspeisepla
 
 ## Implementierte Features
 
+### Teilzeit-Erfassung: Tage ankreuzen, Monatsdeckel & Blanko-Zettel (Juni 2026)
+- **Tage manuell ankreuzen** (`manualDays` pro Mitarbeiter): Öffnungstage des Monats als antippbare Chips; nur gewählte Tage kommen auf den Zettel. Gespeichert in `employee.presence['YYYY-MM']` (Mixed), Teil-Update über `POST /api/employees` mit `presenceMonth`/`presenceDays`.
+- **Eigener Monats-Stundendeckel** (`maxMonthlyHours`, 0 = volle Minijob-Grenze), z. B. 10 h/Monat; `buildSchedule` begrenzt die Zielsumme auf `min(Grenze, Deckel)`.
+- **Blanko-Zettel** pro Mitarbeiter (`buildMonthDoc({blank:true})`): leerer Zettel mit vorausgefüllten Datums-/Wochentagszeilen, leere Zeit-Spalten, keine Summen.
+- UI: Formularfeld „Monats-Limit Std." + Checkbox „Tage manuell ankreuzen"; Badges; Tages-Picker + Button „Blanko" je Mitarbeiter. Getestet (3 Tage → nur diese im PDF, Blanko mit leeren Zeilen).
+
+
 ### Passwortschutz Admin-Bereich (Juni 2026)
 - **Gemeinsames Admin-Passwort** schützt `/admin` und alle schreibenden/Admin-APIs.
 - Dateien: `lib/auth.js` (jose JWT), `pages/api/auth/{login,logout,me}.js`, `pages/login.js`, `middleware.js`.

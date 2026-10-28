@@ -113,7 +113,7 @@ export default function Admin() {
     spaetStart: '11:00', spaetEnd: '14:00',
     ganztagsStart: '07:00', ganztagsEnd: '13:30'
   });
-  const [empForm, setEmpForm] = useState({ _id: null, firstName: '', lastName: '', personnelNumber: '', shift: 'ganztags' });
+  const [empForm, setEmpForm] = useState({ _id: null, firstName: '', lastName: '', personnelNumber: '', shift: 'ganztags', maxMonthlyHours: '', manualDays: false });
   const [tsYear, setTsYear] = useState(() => new Date().getFullYear());
   const [tsMonth, setTsMonth] = useState(() => new Date().getMonth() + 1);
   const [tsData, setTsData] = useState(null);
@@ -209,7 +209,7 @@ export default function Admin() {
       });
       const data = await res.json();
       if (data.success) {
-        setEmpForm({ _id: null, firstName: '', lastName: '', personnelNumber: '', shift: 'ganztags' });
+        setEmpForm({ _id: null, firstName: '', lastName: '', personnelNumber: '', shift: 'ganztags', maxMonthlyHours: '', manualDays: false });
         fetchEmployees();
       } else {
         alert(data.error || 'Fehler beim Speichern');
@@ -286,10 +286,66 @@ export default function Admin() {
     return `${String(eh).padStart(2, '0')}:${String(em).padStart(2, '0')}`;
   };
 
+  // Monatsschlüssel 'YYYY-MM'
+  const monthKeyFor = (year, month) => `${year}-${String(month).padStart(2, '0')}`;
+
+  // Effektive Arbeitstage: bei "Tage manuell" nur die angekreuzten Tage, sonst alle Öffnungstage
+  const effectiveDaysFor = (employee, year, month, openDays) => {
+    if (employee.manualDays) {
+      const ticked = (employee.presence && employee.presence[monthKeyFor(year, month)]) || [];
+      const openSet = new Set(openDays || []);
+      return ticked.filter((d) => openSet.has(d));
+    }
+    return openDays || [];
+  };
+
+  // Anwesenheitstag an-/abhaken und sofort speichern
+  const togglePresence = async (employee, iso) => {
+    const key = monthKeyFor(tsYear, tsMonth);
+    const current = (employee.presence && employee.presence[key]) || [];
+    const next = current.includes(iso) ? current.filter((d) => d !== iso) : [...current, iso].sort();
+    // lokalen State aktualisieren
+    setEmployees((prev) => prev.map((e) => e._id === employee._id
+      ? { ...e, presence: { ...(e.presence || {}), [key]: next } }
+      : e));
+    try {
+      await fetch('/api/employees', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ _id: employee._id, presenceMonth: key, presenceDays: next })
+      });
+    } catch (err) {
+      console.error('Fehler beim Speichern der Anwesenheitstage:', err);
+    }
+  };
+
   // Stundenzettel für einen Mitarbeiter als professionelles PDF herunterladen (aktueller Monat)
   const generateTimesheet = async (employee) => {
-    const calc = getTimesheetCalc();
-    if (calc.numDays === 0) {
+    const openDays = tsData?.workingDays || [];
+    const days = effectiveDaysFor(employee, tsYear, tsMonth, openDays);
+    if (days.length === 0) {
+      alert(employee.manualDays
+        ? 'Bitte zuerst die Anwesenheitstage dieser Mitarbeiterin ankreuzen.'
+        : 'Für diesen Monat wurden keine Öffnungstage in der Speiseplan-Historie gefunden.');
+      return;
+    }
+    const { downloadMonthPdf, loadLogoDataUrl } = await import('../lib/timesheetPdf');
+    const logo = pdfLogo || await loadLogoDataUrl();
+    if (logo && !pdfLogo) setPdfLogo(logo);
+    downloadMonthPdf({
+      employee,
+      year: tsYear,
+      month: tsMonth,
+      workingDays: days,
+      settings: payrollSettings,
+      logo
+    });
+  };
+
+  // Blanko-Stundenzettel (leer, zum handschriftlichen Ausfüllen) für den aktuellen Monat
+  const downloadBlank = async (employee) => {
+    const openDays = tsData?.workingDays || [];
+    if (openDays.length === 0) {
       alert('Für diesen Monat wurden keine Öffnungstage in der Speiseplan-Historie gefunden.');
       return;
     }
@@ -300,9 +356,10 @@ export default function Admin() {
       employee,
       year: tsYear,
       month: tsMonth,
-      workingDays: tsData.workingDays,
+      workingDays: openDays,
       settings: payrollSettings,
-      logo
+      logo,
+      blank: true
     });
   };
 
@@ -317,7 +374,8 @@ export default function Admin() {
       const fetchMonth = async (month) => {
         const res = await fetch(`/api/timesheet?year=${tsYear}&month=${month}`);
         const data = await res.json();
-        return data.success ? data.workingDays : [];
+        const openDays = data.success ? data.workingDays : [];
+        return effectiveDaysFor(employee, tsYear, month, openDays);
       };
 
       const count = await downloadYearZip({
@@ -329,7 +387,7 @@ export default function Admin() {
       });
 
       if (count === 0) {
-        alert(`Für ${tsYear} wurden keine Öffnungstage in der Speiseplan-Historie gefunden.`);
+        alert(`Für ${tsYear} wurden keine Tage gefunden${employee.manualDays ? ' (Anwesenheitstage angekreuzt?)' : ''}.`);
       }
     } catch (err) {
       console.error('Fehler beim Jahres-Download:', err);
@@ -1341,11 +1399,17 @@ export default function Admin() {
                           <span className="ml-2 inline-block text-xs px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700">
                             {emp.shift === 'frueh' ? 'Frühschicht' : emp.shift === 'spaet' ? 'Spätschicht' : 'Ganztagsschicht'}
                           </span>
+                          {emp.maxMonthlyHours > 0 && (
+                            <span className="ml-1 inline-block text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">max {emp.maxMonthlyHours} h/Mon.</span>
+                          )}
+                          {emp.manualDays && (
+                            <span className="ml-1 inline-block text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">Tage manuell</span>
+                          )}
                         </div>
                         <div className="flex items-center gap-2">
                           <button
                             type="button"
-                            onClick={() => setEmpForm({ _id: emp._id, firstName: emp.firstName, lastName: emp.lastName || '', personnelNumber: emp.personnelNumber || '', shift: emp.shift || 'ganztags' })}
+                            onClick={() => setEmpForm({ _id: emp._id, firstName: emp.firstName, lastName: emp.lastName || '', personnelNumber: emp.personnelNumber || '', shift: emp.shift || 'ganztags', maxMonthlyHours: emp.maxMonthlyHours || '', manualDays: !!emp.manualDays })}
                             className="text-xs px-2 py-1 text-indigo-600 border border-indigo-200 rounded hover:bg-indigo-50"
                             data-testid="edit-employee-btn"
                           >
@@ -1402,6 +1466,28 @@ export default function Admin() {
                       <option value="ganztags">Ganztagsschicht</option>
                     </select>
                   </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                    <input
+                      type="number"
+                      min="0"
+                      step="1"
+                      placeholder="Monats-Limit Std. (optional, z. B. 10)"
+                      value={empForm.maxMonthlyHours}
+                      onChange={(e) => setEmpForm(prev => ({ ...prev, maxMonthlyHours: e.target.value }))}
+                      className="rounded-md border-gray-300 border shadow-sm text-sm px-3 py-2 focus:border-indigo-500 focus:ring-indigo-500"
+                      data-testid="employee-maxhours-input"
+                    />
+                    <label className="flex items-center gap-2 text-sm text-gray-700 px-1">
+                      <input
+                        type="checkbox"
+                        checked={empForm.manualDays}
+                        onChange={(e) => setEmpForm(prev => ({ ...prev, manualDays: e.target.checked }))}
+                        className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                        data-testid="employee-manualdays-checkbox"
+                      />
+                      Anwesenheitstage pro Monat manuell ankreuzen
+                    </label>
+                  </div>
                   <div className="mt-2 flex items-center gap-2">
                     <button
                       type="button"
@@ -1416,7 +1502,7 @@ export default function Admin() {
                     {empForm._id && (
                       <button
                         type="button"
-                        onClick={() => setEmpForm({ _id: null, firstName: '', lastName: '', personnelNumber: '', shift: 'ganztags' })}
+                        onClick={() => setEmpForm({ _id: null, firstName: '', lastName: '', personnelNumber: '', shift: 'ganztags', maxMonthlyHours: '', manualDays: false })}
                         className="px-3 py-2 text-sm text-gray-600 border border-gray-200 rounded-md hover:bg-gray-50"
                       >
                         Abbrechen
@@ -1581,36 +1667,83 @@ export default function Admin() {
                     {employees.length === 0 ? (
                       <p className="text-sm text-gray-500">Zuerst Mitarbeiter anlegen, um Stundenzettel zu erstellen.</p>
                     ) : (
-                      employees.map((emp) => (
-                        <div key={emp._id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between border border-gray-200 rounded-lg px-3 py-2 gap-2">
-                          <span className="text-sm font-medium">{emp.firstName} {emp.lastName}</span>
-                          <div className="flex items-center gap-2">
-                            <button
-                              type="button"
-                              onClick={() => generateTimesheet(emp)}
-                              disabled={tsCalc.numDays === 0 || yearDownloading}
-                              className="flex items-center gap-1 px-3 py-1.5 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-300"
-                              data-testid="download-timesheet-btn"
-                            >
-                              <Download className="w-4 h-4" /> Monat (PDF)
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => downloadTimesheetYear(emp)}
-                              disabled={!!yearDownloading}
-                              className="flex items-center gap-1 px-3 py-1.5 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:bg-gray-300"
-                              data-testid="download-year-zip-btn"
-                              title={`Alle Monate ${tsYear} als ZIP (je Monat eine PDF)`}
-                            >
-                              {yearDownloading === emp._id ? (
-                                <><Loader className="w-4 h-4 animate-spin" /> erstelle…</>
-                              ) : (
-                                <><Download className="w-4 h-4" /> Jahr {tsYear} (ZIP)</>
-                              )}
-                            </button>
+                      employees.map((emp) => {
+                        const mKey = `${tsYear}-${String(tsMonth).padStart(2, '0')}`;
+                        const ticked = (emp.presence && emp.presence[mKey]) || [];
+                        const weekdayShort = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+                        return (
+                        <div key={emp._id} className="border border-gray-200 rounded-lg px-3 py-2">
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                            <span className="text-sm font-medium">
+                              {emp.firstName} {emp.lastName}
+                              {emp.manualDays && <span className="ml-2 text-xs text-emerald-600">({ticked.length} Tag{ticked.length === 1 ? '' : 'e'} gewählt)</span>}
+                            </span>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <button
+                                type="button"
+                                onClick={() => generateTimesheet(emp)}
+                                disabled={tsCalc.numDays === 0 || !!yearDownloading}
+                                className="flex items-center gap-1 px-3 py-1.5 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-300"
+                                data-testid="download-timesheet-btn"
+                              >
+                                <Download className="w-4 h-4" /> Monat (PDF)
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => downloadBlank(emp)}
+                                disabled={tsCalc.numDays === 0 || !!yearDownloading}
+                                className="flex items-center gap-1 px-3 py-1.5 text-sm bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 disabled:bg-gray-100 disabled:text-gray-400"
+                                data-testid="download-blank-btn"
+                                title="Leerer Zettel zum handschriftlichen Ausfüllen"
+                              >
+                                <Printer className="w-4 h-4" /> Blanko
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => downloadTimesheetYear(emp)}
+                                disabled={!!yearDownloading}
+                                className="flex items-center gap-1 px-3 py-1.5 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:bg-gray-300"
+                                data-testid="download-year-zip-btn"
+                                title={`Alle Monate ${tsYear} als ZIP (je Monat eine PDF)`}
+                              >
+                                {yearDownloading === emp._id ? (
+                                  <><Loader className="w-4 h-4 animate-spin" /> erstelle…</>
+                                ) : (
+                                  <><Download className="w-4 h-4" /> Jahr {tsYear} (ZIP)</>
+                                )}
+                              </button>
+                            </div>
                           </div>
+
+                          {emp.manualDays && (
+                            <div className="mt-2 pt-2 border-t border-gray-100" data-testid="presence-picker">
+                              <p className="text-xs text-gray-500 mb-1">Anwesenheitstage {MONTH_NAMES[tsMonth - 1]} {tsYear} – antippen zum An-/Abwählen:</p>
+                              {(tsData?.workingDays || []).length === 0 ? (
+                                <p className="text-xs text-gray-400">Keine Öffnungstage in diesem Monat.</p>
+                              ) : (
+                                <div className="flex flex-wrap gap-1">
+                                  {tsData.workingDays.map((iso) => {
+                                    const d = new Date(iso + 'T12:00:00');
+                                    const active = ticked.includes(iso);
+                                    return (
+                                      <button
+                                        key={iso}
+                                        type="button"
+                                        onClick={() => togglePresence(emp, iso)}
+                                        className={`text-xs px-2 py-1 rounded border ${active ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'}`}
+                                        data-testid="presence-day-btn"
+                                      >
+                                        {weekdayShort[d.getDay()]} {String(d.getDate()).padStart(2, '0')}.{String(d.getMonth() + 1).padStart(2, '0')}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
-                      ))
+                        );
+                      })
                     )}
                   </div>
                   <p className="text-xs text-gray-400 mt-2">„Jahr (ZIP)“ lädt für {tsYear} je Monat eine eigene PDF-Datei gebündelt herunter.</p>

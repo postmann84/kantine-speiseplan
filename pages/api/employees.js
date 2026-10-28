@@ -16,10 +16,21 @@ export default async function handler(req, res) {
     }
   }
 
-  // POST: Mitarbeiter anlegen oder aktualisieren
+  // POST: Mitarbeiter anlegen/aktualisieren ODER Anwesenheitstage eines Monats setzen
   if (req.method === 'POST') {
     try {
-      const { _id, firstName, lastName, personnelNumber, note, isActive, shift } = req.body;
+      const { _id, firstName, lastName, personnelNumber, note, isActive, shift, maxMonthlyHours, manualDays } = req.body;
+
+      // Teil-Update: nur Anwesenheitstage eines Monats
+      if (_id && req.body.presenceMonth) {
+        const key = `presence.${req.body.presenceMonth}`;
+        const emp = await Employee.findByIdAndUpdate(
+          _id,
+          { $set: { [key]: Array.isArray(req.body.presenceDays) ? req.body.presenceDays : [] } },
+          { new: true }
+        );
+        return res.status(200).json({ success: true, employee: emp });
+      }
 
       if (!firstName || !firstName.trim()) {
         return res.status(400).json({ success: false, error: 'Vorname ist erforderlich' });
@@ -31,6 +42,8 @@ export default async function handler(req, res) {
         personnelNumber: personnelNumber || '',
         note: note || '',
         shift: ['frueh', 'spaet', 'ganztags'].includes(shift) ? shift : 'ganztags',
+        maxMonthlyHours: Number(maxMonthlyHours) || 0,
+        manualDays: !!manualDays,
         isActive: isActive !== undefined ? isActive : true
       };
 
